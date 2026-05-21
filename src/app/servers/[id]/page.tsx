@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Camera, RefreshCw } from "lucide-react";
+import { ArrowLeft, Camera, RefreshCw, Trash2 } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { CheckStatus, ServerDto, StatusCheckDto } from "@/lib/types";
 
@@ -37,6 +37,7 @@ function ServerDetailsPageContent() {
   const [history, setHistory] = useState<StatusCheckDto[]>([]);
   const status = searchParams.get("status") ?? "";
   const [error, setError] = useState("");
+  const [clearingHistory, setClearingHistory] = useState(false);
   const [lightbox, setLightbox] = useState<{ src: string; checkedAt: string } | null>(null);
 
   const setQuery = useCallback((updates: Record<string, string | null>) => {
@@ -102,6 +103,22 @@ function ServerDetailsPageContent() {
   async function checkNow() {
     await fetch(`/api/servers/${params.id}/check`, { method: "POST" });
     setTimeout(load, 1500);
+  }
+
+  async function clearHistory() {
+    if (!server || !window.confirm(`Clear all history for ${server.name}?`)) return;
+    setClearingHistory(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/servers/${params.id}/history`, { method: "DELETE" });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Clear history failed");
+      setHistory([]);
+      setServer((item) => item ? { ...item, latestCheck: null, uptime24h: null, uptime10d: null } : item);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setClearingHistory(false);
+    }
   }
 
   const chartData = useMemo(() => history.slice().reverse().map((item) => ({
@@ -173,12 +190,17 @@ function ServerDetailsPageContent() {
       <section className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-lg font-semibold text-white">History timeline</h2>
-          <select value={status} onChange={(e) => setStatusQuery(e.target.value)} className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-slate-200">
-            <option value="">All statuses</option>
-            <option value="up">Operational</option>
-            <option value="degraded">Partly</option>
-            <option value="down">Down</option>
-          </select>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <select value={status} onChange={(e) => setStatusQuery(e.target.value)} className="h-10 rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none ring-cyan-400/30 hover:bg-slate-900 focus:ring-2">
+              <option className="bg-slate-950 text-slate-200" value="">All statuses</option>
+              <option className="bg-slate-950 text-slate-200" value="up">Operational</option>
+              <option className="bg-slate-950 text-slate-200" value="degraded">Partly</option>
+              <option className="bg-slate-950 text-slate-200" value="down">Down</option>
+            </select>
+            <button type="button" onClick={clearHistory} disabled={clearingHistory || history.length === 0} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-500/30 px-3 py-2 text-sm font-medium text-rose-200 hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-50">
+              <Trash2 size={15} /> {clearingHistory ? "Clearing..." : "Clear history"}
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
