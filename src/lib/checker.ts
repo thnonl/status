@@ -18,7 +18,7 @@ function routeUrl(server: Pick<ServerDocument, "url">, route?: string) {
   return new URL(normalizedPath, server.url).toString();
 }
 function healthUrl(server: Pick<ServerDocument, "url" | "healthRoute">) {
-  return routeUrl(server, server.healthRoute?.trim());
+  return routeUrl(server, server.healthRoute?.trim() || "/health");
 }
 
 function screenshotUrl(server: Pick<ServerDocument, "url" | "screenshotRoute">) {
@@ -29,8 +29,8 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
   const { chromium } = await import("playwright");
   let browser;
   const startTime = Date.now();
-  const checkUrl = healthUrl(server);
-  const hasHealthRoute = Boolean(server.healthRoute?.trim());
+  let checkUrl = healthUrl(server);
+  const hasCustomHealthRoute = Boolean(server.healthRoute?.trim());
   try {
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage({ viewport: SCREENSHOT_VIEWPORT });
@@ -46,12 +46,24 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
       networkTotal += 1;
       networkErrors += 1;
     });
-    const response = await page.goto(checkUrl, {
+    let response = await page.goto(checkUrl, {
       waitUntil: "domcontentloaded",
       timeout: TIMEOUT_MS,
-    });
-    const responseTimeMs = Date.now() - startTime;
+    }).catch(() => null);
+    let responseTimeMs = Date.now() - startTime;
     if (!httpStatus && response) httpStatus = response.status();
+    if (!hasCustomHealthRoute && (!response || httpStatus === undefined || httpStatus >= 400)) {
+      checkUrl = server.url;
+      httpStatus = undefined;
+      networkTotal = 0;
+      networkErrors = 0;
+      response = await page.goto(checkUrl, {
+        waitUntil: "domcontentloaded",
+        timeout: TIMEOUT_MS,
+      });
+      if (response) httpStatus = response.status();
+      responseTimeMs = Date.now() - startTime;
+    }
     let fileId: Awaited<ReturnType<typeof saveScreenshot>> | undefined;
     try {
       await page.goto(screenshotUrl(server), {
@@ -71,7 +83,7 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
     const mainDocumentDown = httpStatus === undefined || httpStatus >= 400;
     const status = mainDocumentDown
       ? "down"
-      : hasHealthRoute || networkErrors === 0
+      : networkErrors === 0
         ? responseTimeMs >= DEGRADED_THRESHOLD_MS ? "degraded" : "up"
         : networkErrors / Math.max(networkTotal, 1) <= PARTLY_ERROR_RATIO ? "degraded" : "up";
     return await StatusCheckModel.create({
@@ -96,4 +108,12 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
     await browser?.close();
   }
 }
+
+
+
+
+
+
+
+
 
