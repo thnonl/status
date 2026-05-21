@@ -75,34 +75,34 @@ export default function ServerDetailsPage() {
     count: history.filter((item) => item.status === name).length,
   })), [history]);
 
-  if (error) return <main className="p-8 text-rose-200">{error}</main>;
-  if (!server) return <main className="p-8 text-slate-200">Loading...</main>;
+  if (error) return <main className="p-3 text-rose-200">{error}</main>;
+  if (!server) return <main className="p-3 text-slate-200">Loading...</main>;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-8">
-      <header className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-3 px-3 py-2 md:px-8">
+      <header className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
         <Link href="/" className="inline-flex items-center gap-2 text-sm text-cyan-300"><ArrowLeft size={16} /> Dashboard</Link>
-        <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-4xl font-semibold text-white">{server.name}</h1>
+            <h1 className="text-lg font-semibold text-white">{server.name}</h1>
             <p className="mt-2 text-slate-400">{server.url}</p>
             <p className="mt-2 max-w-2xl text-slate-500">{server.description || "No description"}</p>
           </div>
-          <button onClick={checkNow} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 hover:bg-cyan-300">
+          <button onClick={checkNow} className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-3 py-2 font-semibold text-slate-950 hover:bg-cyan-300">
             <RefreshCw size={18} /> Check now
           </button>
         </div>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5"><p className="text-slate-400">Checks</p><b className="mt-2 block text-4xl text-white">{history.length}</b></div>
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5"><p className="text-slate-400">Avg response</p><b className="mt-2 block text-4xl text-white">{history.length ? Math.round(history.reduce((sum, h) => sum + (h.responseTimeMs ?? 0), 0) / history.length) : 0}ms</b></div>
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5"><p className="text-slate-400">Incidents</p><b className="mt-2 block text-4xl text-white">{history.filter((h) => h.status === "down").length}</b></div>
+      <section className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3"><p className="text-slate-400">Checks</p><b className="mt-2 block text-lg text-white">{history.length}</b></div>
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3"><p className="text-slate-400">Avg response</p><b className="mt-2 block text-lg text-white">{history.length ? Math.round(history.reduce((sum, h) => sum + (h.responseTimeMs ?? 0), 0) / history.length) : 0}ms</b></div>
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3"><p className="text-slate-400">Incidents</p><b className="mt-2 block text-lg text-white">{history.filter((h) => h.status === "down").length}</b></div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
-          <h2 className="mb-4 text-xl font-semibold text-white">Response time trend</h2>
+      <section className="grid gap-3 lg:grid-cols-2">
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+          <h2 className="mb-4 text-lg font-semibold text-white">Response time trend</h2>
           <div className="h-72">
             <ResponsiveContainer>
               <AreaChart data={chartData}>
@@ -115,8 +115,8 @@ export default function ServerDetailsPage() {
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
-          <h2 className="mb-4 text-xl font-semibold text-white">Up/down distribution</h2>
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+          <h2 className="mb-4 text-lg font-semibold text-white">Up/down distribution</h2>
           <div className="h-72">
             <ResponsiveContainer>
               <BarChart data={distribution}>
@@ -131,9 +131,9 @@ export default function ServerDetailsPage() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+      <section className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <h2 className="text-xl font-semibold text-white">History timeline</h2>
+          <h2 className="text-lg font-semibold text-white">History timeline</h2>
           <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-slate-200">
             <option value="">All statuses</option>
             <option value="up">Up</option>
@@ -146,13 +146,13 @@ export default function ServerDetailsPage() {
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="text-slate-500">
               <tr>
-                <th className="py-3">Status</th><th>Checked</th><th>HTTP</th><th>Response</th><th>Error</th><th>Screenshot</th>
+                <th className="py-2">Status</th><th>Checked</th><th>HTTP</th><th>Response</th><th>Error</th><th>Screenshot</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
               {history.map((item) => (
                 <tr key={item._id} className="text-slate-300">
-                  <td className="py-4">
+                  <td className="py-2">
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${pill[item.status]}`}>{statusLabel(item.status)}</span>
                   </td>
                   <td>{when(item.checkedAt)}</td>
@@ -180,7 +180,7 @@ export default function ServerDetailsPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {history.filter((h) => h.screenshotFileId).slice(0, 12).map((item) => (
           <a
             key={item._id}
@@ -189,7 +189,7 @@ export default function ServerDetailsPage() {
               event.preventDefault();
               setLightbox({ src: `/api/screenshots/${item.screenshotFileId}`, checkedAt: item.checkedAt });
             }}
-            className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04]"
+            className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]"
           >
             <div className="relative h-48 w-full bg-slate-950">
               <Image
@@ -207,14 +207,14 @@ export default function ServerDetailsPage() {
 
       {lightbox ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-3"
           role="dialog"
           aria-modal="true"
           aria-label="Screenshot lightbox"
           onClick={() => setLightbox(null)}
         >
           <div
-            className="relative w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-2xl"
+            className="relative w-full max-w-5xl overflow-hidden rounded-xl border border-white/10 bg-slate-950 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -234,7 +234,7 @@ export default function ServerDetailsPage() {
                 sizes="100vw"
               />
             </div>
-            <div className="border-t border-white/10 p-4 text-sm text-slate-300">
+            <div className="border-t border-white/10 p-3 text-sm text-slate-300">
               {when(lightbox.checkedAt)}
             </div>
           </div>

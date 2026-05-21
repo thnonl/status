@@ -140,7 +140,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
           ].join(" ")}
         >
           <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-4">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2">
               <div className={collapsed ? "md:hidden" : "min-w-0"}>
                 <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Status</p>
                 <h1 className="mt-1 truncate text-lg font-semibold text-white">Admin Console</h1>
@@ -172,7 +172,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                     href={href}
                     onClick={() => setMobileOpen(false)}
                     className={[
-                      "flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition",
+                      "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition",
                       active ? "bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-400/20" : "text-slate-300 hover:bg-white/5 hover:text-white",
                       collapsed ? "md:justify-center md:px-2" : "",
                     ].join(" ")}
@@ -185,15 +185,15 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
               })}
             </nav>
 
-            <div className="border-t border-white/10 p-4">
-              <div className={`rounded-2xl border border-white/10 bg-white/5 p-4 ${collapsed ? "md:hidden" : ""}`}>
+            <div className="border-t border-white/10 p-3">
+              <div className={`rounded-xl border border-white/10 bg-white/5 p-3 ${collapsed ? "md:hidden" : ""}`}>
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Project</p>
                 <p className="mt-2 truncate text-sm font-medium text-white">
                   {currentProject?.name ?? currentProject?.title ?? "No project selected"}
                 </p>
               </div>
               <div className={`hidden justify-center ${collapsed ? "md:flex" : ""}`} title={currentProject?.name ?? currentProject?.title ?? "No project selected"}>
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xs font-semibold text-cyan-200">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-xs font-semibold text-cyan-200">
                   {(currentProject?.name ?? currentProject?.title ?? "?").slice(0, 1).toUpperCase()}
                 </div>
               </div>
@@ -205,7 +205,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
           <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
-            <div className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6">
+            <div className="flex flex-col gap-3 px-3 py-2 md:flex-row md:items-center md:justify-between md:px-3">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -217,7 +217,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                 </button>
                 <div>
                   <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Admin Status</p>
-                  <h2 className="mt-1 text-lg font-semibold text-white md:text-xl">Operations shell</h2>
+                  <h2 className="mt-1 text-lg font-semibold text-white md:text-lg">Operations shell</h2>
                 </div>
               </div>
 
@@ -229,7 +229,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                     disabled={projectLoading}
                     aria-haspopup="listbox"
                     aria-expanded={projectMenuOpen}
-                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left shadow-lg shadow-black/10 transition hover:border-cyan-400/30 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left shadow-lg shadow-black/10 transition hover:border-cyan-400/30 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <span className="min-w-0">
                       <span className="block text-[10px] uppercase tracking-[0.25em] text-slate-400">Project</span>
@@ -241,10 +241,10 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                   </button>
 
                   {projectMenuOpen ? (
-                    <div className="absolute right-0 top-full z-50 mt-2 w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 p-1 shadow-2xl shadow-black/40 backdrop-blur-xl ring-1 ring-cyan-400/10">
+                    <div className="absolute right-0 top-full z-50 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-950/95 p-1 shadow-2xl shadow-black/40 backdrop-blur-xl ring-1 ring-cyan-400/10">
                       <div className="max-h-72 overflow-y-auto py-1" role="listbox" aria-label="Project selector">
                         {projects.length === 0 ? (
-                          <div className="px-3 py-3 text-sm text-slate-400">No projects</div>
+                          <div className="px-3 py-2 text-sm text-slate-400">No projects</div>
                         ) : null}
                         {projects.map((project) => {
                           const id = project._id ?? project.id ?? "";
@@ -257,7 +257,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                               role="option"
                               aria-selected={active}
                               onClick={() => handleProjectChange(id)}
-                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition ${active ? "bg-cyan-400/15 text-cyan-100 ring-1 ring-cyan-400/20" : "text-slate-300 hover:bg-white/8 hover:text-white"}`}
+                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition ${active ? "bg-cyan-400/15 text-cyan-100 ring-1 ring-cyan-400/20" : "text-slate-300 hover:bg-white/8 hover:text-white"}`}
                             >
                               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/5 text-xs font-semibold text-cyan-200">{label.slice(0, 1).toUpperCase()}</span>
                               <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -265,7 +265,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                             </button>
                           );
                         })}
-                        <button type="button" onClick={() => handleProjectChange("__new__")} className="mt-1 flex w-full items-center justify-center rounded-xl border border-dashed border-cyan-400/30 px-3 py-2.5 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/10">
+                        <button type="button" onClick={() => handleProjectChange("__new__")} className="mt-1 flex w-full items-center justify-center rounded-xl border border-dashed border-cyan-400/30 px-3 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/10">
                           New project...
                         </button>
                       </div>
@@ -277,7 +277,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                   onClick={refreshPage}
                   disabled={refreshing}
                   title="Làm mới dữ liệu"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-wait disabled:opacity-70"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-3 py-2 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-wait disabled:opacity-70"
                 >
                   <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
                 </button>
@@ -285,7 +285,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 px-4 py-5 md:px-6">
+          <main className="min-w-0 flex-1 px-3 py-2 md:px-3">
             <div className="mx-auto w-full max-w-7xl">{children}</div>
           </main>
         </div>

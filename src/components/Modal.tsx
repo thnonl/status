@@ -103,7 +103,7 @@ export function Modal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3">
       <div
         ref={dialogRef}
         role="dialog"
@@ -112,10 +112,10 @@ export function Modal({
         aria-describedby={descriptionId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-950 p-6 shadow-2xl outline-none"
+        className="w-full max-w-2xl rounded-xl border border-white/10 bg-slate-950 p-3 shadow-2xl outline-none"
       >
-        <div className="mb-5 flex items-center justify-between">
-          <h2 id={titleId} className="text-xl font-semibold text-white">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 id={titleId} className="text-lg font-semibold text-white">
             {title}
           </h2>
           <button
@@ -128,7 +128,7 @@ export function Modal({
           </button>
         </div>
         {children}
-        {footer && <div className="mt-6 flex justify-end gap-3">{footer}</div>}
+        {footer && <div className="mt-3 flex justify-end gap-3">{footer}</div>}
       </div>
     </div>
   );
@@ -154,18 +154,18 @@ export function ConfirmModal({
       <p id={messageId} className="text-slate-300">
         {message}
       </p>
-      <div className="mt-6 flex justify-end gap-3">
+      <div className="mt-3 flex justify-end gap-3">
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl border border-white/10 px-4 py-2 text-slate-200 hover:bg-white/10"
+          className="rounded-xl border border-white/10 px-3 py-2 text-slate-200 hover:bg-white/10"
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={onConfirm}
-          className="rounded-xl bg-rose-500 px-4 py-2 font-semibold text-white hover:bg-rose-400"
+          className="rounded-xl bg-rose-500 px-3 py-2 font-semibold text-white hover:bg-rose-400"
         >
           {confirmLabel}
         </button>
