@@ -11,15 +11,15 @@ import type { CheckStatus, ServerDto, StatusCheckDto } from "@/lib/types";
 const pill: Record<CheckStatus, string> = {
   up: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
   degraded: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
-  not_found: "bg-yellow-500/15 text-yellow-300 ring-yellow-500/30",
+  not_found: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
   down: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
 };
 
 const statusLabels: Record<CheckStatus, string> = {
   up: "Operational",
-  degraded: "Slow response",
-  not_found: "Not found",
-  down: "Offline",
+  degraded: "Partly",
+  not_found: "Down",
+  down: "Down",
 };
 function statusLabel(status: string) { return statusLabels[status as CheckStatus] ?? status; }
 
@@ -109,9 +109,9 @@ function ServerDetailsPageContent() {
     response: item.responseTimeMs ?? 0,
   })), [history]);
 
-  const distribution = useMemo(() => (["up", "degraded", "not_found", "down"] as CheckStatus[]).map((name) => ({
+  const distribution = useMemo(() => (["up", "degraded", "down"] as CheckStatus[]).map((name) => ({
     name: statusLabel(name),
-    count: history.filter((item) => item.status === name).length,
+    count: history.filter((item) => item.status === name || (name === "down" && item.status === "not_found")).length,
   })), [history]);
 
   if (error) return <main className="p-3 text-rose-200">{error}</main>;
@@ -176,9 +176,8 @@ function ServerDetailsPageContent() {
           <select value={status} onChange={(e) => setStatusQuery(e.target.value)} className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-slate-200">
             <option value="">All statuses</option>
             <option value="up">Operational</option>
-            <option value="degraded">Slow response</option>
-            <option value="not_found">Not found</option>
-            <option value="down">Offline</option>
+            <option value="degraded">Partly</option>
+            <option value="down">Down</option>
           </select>
         </div>
         <div className="overflow-x-auto">

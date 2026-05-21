@@ -15,7 +15,7 @@ type DashboardStatus = CheckStatus | "unknown";
 const statusStyle: Record<DashboardStatus, string> = {
   up: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
   degraded: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
-  not_found: "bg-yellow-500/15 text-yellow-300 ring-yellow-500/30",
+  not_found: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
   down: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
   unknown: "bg-slate-500/15 text-slate-300 ring-slate-500/30",
 };
@@ -26,9 +26,9 @@ function fmt(value?: string) {
 function pct(value: number | null) { return value === null ? "—" : `${value}%`; }
 const statusLabels: Record<DashboardStatus, string> = {
   up: "Operational",
-  degraded: "Slow response",
-  not_found: "Not found",
-  down: "Offline",
+  degraded: "Partly",
+  not_found: "Down",
+  down: "Down",
   unknown: "Not checked",
 };
 function statusLabel(status: string) { return statusLabels[status as DashboardStatus] ?? status; }
@@ -231,16 +231,17 @@ function DashboardPageContent() {
   const stats = useMemo(() => ({
     total: servers.length,
     up: servers.filter((s) => s.latestCheck?.status === "up").length,
-    degraded: servers.filter((s) => s.latestCheck?.status === "degraded" || s.latestCheck?.status === "not_found").length,
-    down: servers.filter((s) => s.latestCheck?.status === "down").length,
+    degraded: servers.filter((s) => s.latestCheck?.status === "degraded").length,
+    down: servers.filter((s) => s.latestCheck?.status === "down" || s.latestCheck?.status === "not_found").length,
   }), [servers]);
   const filteredServers = useMemo(() => servers.filter((server) => {
     const status = server.latestCheck?.status;
     if (statusFilter === "all") return true;
-    if (statusFilter === "degraded") return status === "degraded" || status === "not_found";
+    if (statusFilter === "degraded") return status === "degraded";
+    if (statusFilter === "down") return status === "down" || status === "not_found";
     return status === statusFilter;
   }), [servers, statusFilter]);
-  const cards = [["Total", stats.total, Globe2, "all"], ["Up", stats.up, Activity, "up"], ["Degraded", stats.degraded, Clock, "degraded"], ["Down", stats.down, Server, "down"]] as const;
+  const cards = [["Total", stats.total, Globe2, "all"], ["Up", stats.up, Activity, "up"], ["Partly", stats.degraded, Clock, "degraded"], ["Down", stats.down, Server, "down"]] as const;
 
   return <main className="space-y-3">
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -279,3 +280,4 @@ export default function DashboardPage() {
     </Suspense>
   );
 }
+
