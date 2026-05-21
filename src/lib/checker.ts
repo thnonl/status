@@ -47,7 +47,7 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
       networkErrors += 1;
     });
     const response = await page.goto(checkUrl, {
-      waitUntil: "networkidle",
+      waitUntil: "domcontentloaded",
       timeout: TIMEOUT_MS,
     });
     const responseTimeMs = Date.now() - startTime;
@@ -68,9 +68,12 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
     } catch {
       fileId = undefined;
     }
-    const status = hasHealthRoute
-      ? httpStatus && httpStatus >= 400 ? "down" : responseTimeMs >= DEGRADED_THRESHOLD_MS ? "degraded" : "up"
-      : networkErrors === 0 ? "up" : networkErrors / Math.max(networkTotal, 1) <= PARTLY_ERROR_RATIO ? "degraded" : "down";
+    const mainDocumentDown = httpStatus === undefined || httpStatus >= 400;
+    const status = mainDocumentDown
+      ? "down"
+      : hasHealthRoute || networkErrors === 0
+        ? responseTimeMs >= DEGRADED_THRESHOLD_MS ? "degraded" : "up"
+        : networkErrors / Math.max(networkTotal, 1) <= PARTLY_ERROR_RATIO ? "degraded" : "up";
     return await StatusCheckModel.create({
       serverId: server._id,
       url: checkUrl,

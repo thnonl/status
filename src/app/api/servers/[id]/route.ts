@@ -21,7 +21,33 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     if (!mongoose.isValidObjectId(scopeProjectId)) return jsonError("Invalid projectId", 404);
     if (server.projectId?.toString() !== scopeProjectId) return jsonError("Not found", 404);
   }
-  return Response.json({ ...server, _id: server._id.toString(), projectId: server.projectId.toString() });
+  const latest = await StatusCheckModel.findOne({ serverId: server._id }).sort({ checkedAt: -1 }).lean();
+  const now = Date.now();
+  async function uptime(since: Date): Promise<number | null> {
+    const checks = await StatusCheckModel.find({ serverId: server._id, checkedAt: { $gte: since } }, "status").lean();
+    if (!checks.length) return null;
+    const up = checks.filter((check) => check.status === "up" || check.status === "degraded").length;
+    return Math.round((up / checks.length) * 1000) / 10;
+  }
+  const [uptime24h, uptime10d] = await Promise.all([
+    uptime(new Date(now - 86400_000)),
+    uptime(new Date(now - 10 * 86400_000)),
+  ]);
+  return Response.json({
+    ...server,
+    _id: server._id.toString(),
+    projectId: server.projectId.toString(),
+    latestCheck: latest
+      ? {
+          ...latest,
+          _id: latest._id.toString(),
+          serverId: latest.serverId.toString(),
+          screenshotFileId: latest.screenshotFileId?.toString(),
+        }
+      : null,
+    uptime24h,
+    uptime10d,
+  });
 }
 
 export async function PUT(req: NextRequest, { params }: Ctx) {

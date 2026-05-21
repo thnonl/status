@@ -46,7 +46,7 @@ function DashboardPageContent() {
   const [servers, setServers] = useState<ServerDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [checkingId, setCheckingId] = useState("");
+  const [checkingIds, setCheckingIds] = useState<string[]>([]);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string; id?: string } | null>(null);
   const [historyServer, setHistoryServer] = useState<ServerDto | null>(null);
   const [historyItems, setHistoryItems] = useState<StatusCheckDto[]>([]);
@@ -138,19 +138,22 @@ function DashboardPageContent() {
   }
 
   async function checkNow(id: string) {
-    setCheckingId(id);
+    setCheckingIds((ids) => ids.includes(id) ? ids : [...ids, id]);
     try {
       const res = await fetch(`/api/servers/${id}/check`, { method: "POST" });
       if (!res.ok) throw new Error((await res.json()).error ?? "Check failed");
       const latestCheck = (await res.json()) as StatusCheckDto;
-      setServers((items) => items.map((server) => server._id === id ? { ...server, latestCheck } : server));
-      setHistoryServer((server) => server?._id === id ? { ...server, latestCheck } : server);
+      const projectId = currentProject(projectParam);
+      const serverRes = await fetch(`/api/servers/${id}${projectId ? `?projectId=${projectId}` : ""}`, { cache: "no-store" });
+      if (!serverRes.ok) throw new Error((await serverRes.json()).error ?? "Server reload failed");
+      const updatedServer = (await serverRes.json()) as ServerDto;
+      setServers((items) => items.map((server) => server._id === id ? updatedServer : server));
+      setHistoryServer((server) => server?._id === id ? updatedServer : server);
       if (historyServer?._id === id) setHistoryItems((items) => [latestCheck, ...items]);
-      void load({ silent: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setCheckingId("");
+      setCheckingIds((ids) => ids.filter((checkingId) => checkingId !== id));
     }
   }
 
@@ -276,7 +279,7 @@ function DashboardPageContent() {
       const status = server.latestCheck?.status ?? "unknown";
       return <article key={server._id} draggable onDragStart={(event) => { setDraggingId(server._id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={() => dropServer(index)} onDragEnd={() => setDraggingId("")} className={`overflow-hidden rounded-xl border bg-white/[0.04] shadow-xl shadow-black/20 transition ${draggingId === server._id ? "scale-[0.98] border-cyan-400/60 opacity-60" : "border-white/10"}`}>
         <div className="relative h-32 w-full bg-slate-950">
-          <div className="absolute right-2 top-2 z-20 flex items-center gap-1.5">
+          <div className="absolute right-2 top-2 z-19 flex items-center gap-1.5">
             <button type="button" onClick={() => openEdit(server)} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/70 bg-black/85 text-white shadow-lg shadow-black/50 ring-1 ring-white/20 backdrop-blur hover:bg-black hover:ring-cyan-300/60" title="Edit server" aria-label={`Edit ${server.name}`}><Pencil size={14}/></button>
             <span className="inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-full border border-black/70 bg-black/85 text-white shadow-lg shadow-black/50 ring-1 ring-white/20 backdrop-blur active:cursor-grabbing" title="Drag to reorder" aria-label={`Drag ${server.name} to reorder`}><GripVertical size={15}/></span>
           </div>
@@ -284,7 +287,7 @@ function DashboardPageContent() {
         </div>
         <div className="space-y-3 p-3"><div><div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2"><Link href={projectHref(`/servers/${server._id}`)} className="min-w-0 truncate text-lg font-semibold text-white hover:text-cyan-300">{server.name}</Link><span className={`justify-self-end whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusStyle[status]}`}>{statusLabel(status)}</span></div><a href={server.url} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-sm text-slate-400 hover:text-cyan-300" title={server.url}>{server.url}</a></div>
         <div className="grid grid-cols-3 gap-2 text-sm"><div className="rounded-xl bg-black/25 p-3"><p className="text-slate-500">24h</p><b>{pct(server.uptime24h)}</b></div><div className="rounded-xl bg-black/25 p-3"><p className="text-slate-500">10d</p><b>{pct(server.uptime10d)}</b></div><div className="rounded-xl bg-black/25 p-3"><p className="text-slate-500">RT</p><b>{server.latestCheck?.responseTimeMs ? `${server.latestCheck.responseTimeMs}ms` : "—"}</b></div></div>
-        <p className="text-xs text-slate-500">Last checked: {fmt(server.latestCheck?.checkedAt)}</p><div className="grid grid-cols-2 gap-2"><button onClick={() => checkNow(server._id)} disabled={checkingId === server._id} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-200 hover:bg-white/10 disabled:cursor-wait disabled:opacity-60">{checkingId === server._id ? "Checking..." : "Check now"}</button><button onClick={() => openHistory(server, false)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-200 hover:bg-white/10"><History size={15}/> History</button></div></div>
+        <p className="text-xs text-slate-500">Last checked: {fmt(server.latestCheck?.checkedAt)}</p><div className="grid grid-cols-2 gap-2"><button onClick={() => checkNow(server._id)} disabled={checkingIds.includes(server._id)} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-200 hover:bg-white/10 disabled:cursor-wait disabled:opacity-60">{checkingIds.includes(server._id) ? "Checking..." : "Check now"}</button><button onClick={() => openHistory(server, false)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-200 hover:bg-white/10"><History size={15}/> History</button></div></div>
       </article>})}</section>
 
   {editing ? (<Modal title="Edit server" onClose={() => setEditing(null)}><form onSubmit={saveEdit} className="space-y-3"><input required placeholder="Name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><input required placeholder="https://example.com" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><input placeholder="Health route (default /health)" value={editForm.healthRoute} onChange={(e) => setEditForm({ ...editForm, healthRoute: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><input placeholder="Screenshot route (default server URL)" value={editForm.screenshotRoute} onChange={(e) => setEditForm({ ...editForm, screenshotRoute: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><textarea placeholder="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><input placeholder="tags" value={editForm.tags} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/>{editError && <p className="text-rose-300">{editError}</p>}<div className="flex justify-end gap-3"><button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-white/10 px-3 py-2 text-slate-200">Cancel</button><button className="rounded-xl bg-cyan-400 px-3 py-2 font-semibold text-slate-950">Save</button></div></form></Modal>) : null}
