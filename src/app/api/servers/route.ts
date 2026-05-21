@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const project = await resolveProjectScope(projectId);
   if (!project) return jsonError("Invalid projectId", 404);
 
-  const servers = await ServerModel.find({ projectId: project._id }).sort({ createdAt: -1 }).lean();
+  const servers = await ServerModel.find({ projectId: project._id }).sort({ displayOrder: 1, createdAt: -1 }).lean();
   const ids = servers.map((s) => s._id);
 
   const latestChecks = await StatusCheckModel.aggregate([
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   async function uptime(serverId: mongoose.Types.ObjectId, since: Date): Promise<number | null> {
     const checks = await StatusCheckModel.find({ serverId, checkedAt: { $gte: since } }, "status").lean();
     if (!checks.length) return null;
-    const up = checks.filter((c) => c.status !== "down").length;
+    const up = checks.filter((c) => c.status === "up" || c.status === "degraded").length;
     return Math.round((up / checks.length) * 1000) / 10;
   }
 
@@ -66,24 +66,30 @@ export async function POST(req: NextRequest) {
   if (process.env.NODE_ENV !== "test") initCron();
   const body = await req.json().catch(() => null);
   if (!body) return jsonError("Invalid JSON");
-  const { name, url, healthRoute, description, tags, enabled, projectId } = body as Record<string, unknown>;
+  const { name, url, healthRoute, screenshotRoute, description, tags, enabled, projectId } = body as Record<string, unknown>;
   if (typeof name !== "string" || !name.trim()) return jsonError("name is required");
   if (typeof url !== "string" || !isValidHttpUrl(url)) return jsonError("url must be a valid http/https URL");
   if (healthRoute !== undefined && typeof healthRoute !== "string") return jsonError("healthRoute must be a string");
+  if (screenshotRoute !== undefined && typeof screenshotRoute !== "string") return jsonError("screenshotRoute must be a string");
   if (projectId !== undefined && typeof projectId !== "string") return jsonError("projectId must be a valid id", 404);
   await connectDb();
   const project = await resolveProjectScope(typeof projectId === "string" ? projectId : null);
   if (!project) return jsonError("Invalid projectId", 404);
   try {
+    const lastServer = await ServerModel.findOne({ projectId: project._id }).sort({ displayOrder: -1, createdAt: -1 }).lean();
+    const displayOrder = ((lastServer?.displayOrder as number | undefined) ?? -1) + 1;
     const doc = await ServerModel.create({
       projectId: project._id,
       name: name.trim(),
       url: url.trim(),
       healthRoute: typeof healthRoute === "string" ? healthRoute.trim() : "",
+      screenshotRoute: typeof screenshotRoute === "string" ? screenshotRoute.trim() : "",
       description: typeof description === "string" ? description.trim() : "",
       tags: normalizeTags(tags),
       enabled: enabled !== false,
+      displayOrder,
     });
+    await ServerModel.collection.updateOne({ _id: doc._id }, { $set: { displayOrder } });
     return Response.json(
       {
         ...doc.toObject(),
@@ -96,5 +102,32 @@ export async function POST(req: NextRequest) {
     if ((err as { code?: number }).code === 11000) return jsonError("URL already exists in this project", 409);
     throw err;
   }
+}
+
+export async function PATCH(req: NextRequest) {
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!body) return jsonError("Invalid JSON");
+  const { projectId, orderedIds } = body;
+  if (!Array.isArray(orderedIds) || orderedIds.some((id) => typeof id !== "string" || !mongoose.isValidObjectId(id))) {
+    return jsonError("orderedIds must be valid ids");
+  }
+
+  await connectDb();
+  const project = await resolveProjectScope(typeof projectId === "string" ? projectId : null);
+  if (!project) return jsonError("Invalid projectId", 404);
+
+  const ids = orderedIds.map((id) => new mongoose.Types.ObjectId(id));
+  const count = await ServerModel.countDocuments({ _id: { $in: ids }, projectId: project._id });
+  if (count !== ids.length) return jsonError("Invalid server order", 400);
+
+  await ServerModel.collection.bulkWrite(
+    ids.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id, projectId: project._id },
+        update: { $set: { displayOrder: index } },
+      },
+    })),
+  );
+  return Response.json({ ok: true });
 }
 

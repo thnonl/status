@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   const since = searchParams.get("since");
   await connectDb();
   const query: Record<string, unknown> = { serverId: new mongoose.Types.ObjectId(id) };
-  if (status && ["up", "degraded", "down"].includes(status)) query.status = status;
+  if (status && ["up", "degraded", "not_found", "down"].includes(status)) query.status = status;
   if (since) query.checkedAt = { $gte: new Date(since) };
   const checks = await StatusCheckModel.find(query).sort({ checkedAt: -1 }).limit(limit).lean();
   return Response.json(

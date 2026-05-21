@@ -8,15 +8,20 @@ const DEGRADED_THRESHOLD_MS = 5000;
 const TIMEOUT_MS = 30000;
 const SCREENSHOT_VIEWPORT = { width: 1920, height: 1080 };
 
+function routeUrl(server: Pick<ServerDocument, "url">, route?: string) {
+  const path = route?.trim();
+  if (!path) return server.url;
+  if (/^https?:\/\//i.test(path)) return path;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return new URL(normalizedPath, server.url).toString();
+}
 function healthUrl(server: Pick<ServerDocument, "url" | "healthRoute">) {
-  const base = new URL(server.url);
-  const route = server.healthRoute?.trim() || "/health";
-  base.pathname = route.startsWith("/") ? route : `/${route}`;
-  base.search = "";
-  base.hash = "";
-  return base.toString();
+  return routeUrl(server, server.healthRoute?.trim() || "/health");
 }
 
+function screenshotUrl(server: Pick<ServerDocument, "url" | "screenshotRoute">) {
+  return routeUrl(server, server.screenshotRoute);
+}
 export async function checkServer(server: ServerDocument & { _id: mongoose.Types.ObjectId }) {
   await connectDb();
   const { chromium } = await import("playwright");
@@ -36,12 +41,22 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
     });
     const responseTimeMs = Date.now() - startTime;
     if (!httpStatus && response) httpStatus = response.status();
-    const screenshotBuf = await page.screenshot({ fullPage: true });
-    const fileId = await saveScreenshot(
-      `screenshot-${server._id}-${Date.now()}.png`,
-      screenshotBuf,
-    );
-    const status = responseTimeMs >= DEGRADED_THRESHOLD_MS ? "degraded" : "up";
+    let fileId: Awaited<ReturnType<typeof saveScreenshot>> | undefined;
+    try {
+      await page.goto(screenshotUrl(server), {
+        waitUntil: "domcontentloaded",
+        timeout: TIMEOUT_MS,
+      });
+      await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => undefined);
+      const screenshotBuf = await page.screenshot({ fullPage: true });
+      fileId = await saveScreenshot(
+        `screenshot-${server._id}-${Date.now()}.png`,
+        screenshotBuf,
+      );
+    } catch {
+      fileId = undefined;
+    }
+    const status = httpStatus === 404 ? "not_found" : responseTimeMs >= DEGRADED_THRESHOLD_MS ? "degraded" : "up";
     await StatusCheckModel.create({
       serverId: server._id,
       url: checkUrl,

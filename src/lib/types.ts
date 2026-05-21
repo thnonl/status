@@ -1,4 +1,4 @@
-export type CheckStatus = "up" | "degraded" | "down";
+export type CheckStatus = "up" | "degraded" | "not_found" | "down";
 
 export type ProjectDto = {
   _id: string;
@@ -16,9 +16,11 @@ export type ServerDto = {
   name: string;
   url: string;
   healthRoute?: string;
+  screenshotRoute?: string;
   description?: string;
   tags: string[];
   enabled: boolean;
+  displayOrder: number;
   createdAt: string;
   updatedAt: string;
   latestCheck?: StatusCheckDto | null;

@@ -3,7 +3,7 @@ import mongoose, { Schema, models, model } from "mongoose";
 export type StatusCheckDocument = mongoose.Document & {
   serverId: mongoose.Types.ObjectId;
   url: string;
-  status: "up" | "degraded" | "down";
+  status: "up" | "degraded" | "not_found" | "down";
   httpStatus?: number;
   responseTimeMs?: number;
   error?: string;
@@ -14,7 +14,7 @@ export type StatusCheckDocument = mongoose.Document & {
 const StatusCheckSchema = new Schema<StatusCheckDocument>({
   serverId: { type: Schema.Types.ObjectId, ref: "Server", required: true, index: true },
   url: { type: String, required: true },
-  status: { type: String, enum: ["up", "degraded", "down"], required: true, index: true },
+  status: { type: String, enum: ["up", "degraded", "not_found", "down"], required: true, index: true },
   httpStatus: Number,
   responseTimeMs: Number,
   error: String,

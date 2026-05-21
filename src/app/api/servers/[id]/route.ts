@@ -29,15 +29,17 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
   if (!mongoose.isValidObjectId(id)) return jsonError("Invalid id", 404);
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return jsonError("Invalid JSON");
-  const { name, url, healthRoute, description, tags, enabled, projectId } = body;
+  const { name, url, healthRoute, screenshotRoute, description, tags, enabled, projectId } = body;
   if (name !== undefined && (typeof name !== "string" || !name.trim())) return jsonError("name cannot be empty");
   if (url !== undefined && (typeof url !== "string" || !isValidHttpUrl(url))) return jsonError("url must be valid http/https");
   if (healthRoute !== undefined && typeof healthRoute !== "string") return jsonError("healthRoute must be a string");
+  if (screenshotRoute !== undefined && typeof screenshotRoute !== "string") return jsonError("screenshotRoute must be a string");
   if (projectId !== undefined && typeof projectId !== "string") return jsonError("projectId must be a valid id", 404);
   const update: Record<string, unknown> = {};
   if (name !== undefined) update.name = (name as string).trim();
   if (url !== undefined) update.url = (url as string).trim();
   if (healthRoute !== undefined) update.healthRoute = (healthRoute as string).trim();
+  if (screenshotRoute !== undefined) update.screenshotRoute = (screenshotRoute as string).trim();
   if (description !== undefined) update.description = (description as string).trim();
   if (tags !== undefined) update.tags = normalizeTags(tags);
   if (enabled !== undefined) update.enabled = Boolean(enabled);

@@ -11,8 +11,11 @@ import type { ServerDto, StatusCheckDto } from "@/lib/types";
 const pill = {
   up: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
   degraded: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
+  not_found: "bg-yellow-500/15 text-yellow-300 ring-yellow-500/30",
   down: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
 };
+
+function statusLabel(status: string) { return status === "not_found" ? "Not found" : status; }
 
 function when(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
@@ -67,7 +70,7 @@ export default function ServerDetailsPage() {
     response: item.responseTimeMs ?? 0,
   })), [history]);
 
-  const distribution = useMemo(() => ["up", "degraded", "down"].map((name) => ({
+  const distribution = useMemo(() => ["up", "degraded", "not_found", "down"].map((name) => ({
     name,
     count: history.filter((item) => item.status === name).length,
   })), [history]);
@@ -135,6 +138,7 @@ export default function ServerDetailsPage() {
             <option value="">All statuses</option>
             <option value="up">Up</option>
             <option value="degraded">Degraded</option>
+            <option value="not_found">Not found</option>
             <option value="down">Down</option>
           </select>
         </div>
@@ -149,7 +153,7 @@ export default function ServerDetailsPage() {
               {history.map((item) => (
                 <tr key={item._id} className="text-slate-300">
                   <td className="py-4">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${pill[item.status]}`}>{item.status}</span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${pill[item.status]}`}>{statusLabel(item.status)}</span>
                   </td>
                   <td>{when(item.checkedAt)}</td>
                   <td>{item.httpStatus ?? "—"}</td>

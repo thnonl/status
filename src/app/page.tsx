@@ -3,12 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, Clock, Globe2, Plus, Server } from "lucide-react";
-import type { ServerDto } from "@/lib/types";
+import { Activity, GripVertical, Clock, Globe2, History, Plus, Server } from "lucide-react";
+import type { ServerDto, StatusCheckDto } from "@/lib/types";
 
 const statusStyle = {
   up: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
   degraded: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
+  not_found: "bg-yellow-500/15 text-yellow-300 ring-yellow-500/30",
   down: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
   unknown: "bg-slate-500/15 text-slate-300 ring-slate-500/30",
 };
@@ -17,13 +18,22 @@ function fmt(value?: string) {
   return value ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Never";
 }
 function pct(value: number | null) { return value === null ? "—" : `${value}%`; }
+function statusLabel(status: string) { return status === "not_found" ? "Not found" : status; }
 function currentProject() { return typeof window === "undefined" ? "" : localStorage.getItem("currentProjectId") ?? ""; }
+type StatusFilter = "all" | "up" | "degraded" | "down";
 
 export default function DashboardPage() {
   const [servers, setServers] = useState<ServerDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [checkingId, setCheckingId] = useState("");
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [historyServer, setHistoryServer] = useState<ServerDto | null>(null);
+  const [historyItems, setHistoryItems] = useState<StatusCheckDto[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+  const [draggingId, setDraggingId] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -41,6 +51,15 @@ export default function DashboardPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!lightbox && !historyServer) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setLightbox(null); setHistoryServer(null); }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [lightbox, historyServer]);
+
   async function checkNow(id: string) {
     setCheckingId(id);
     try {
@@ -51,31 +70,80 @@ export default function DashboardPage() {
     }
   }
 
+  async function openHistory(server: ServerDto) {
+    setHistoryServer(server);
+    setHistoryItems([]);
+    setHistoryError("");
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(`/api/servers/${server._id}/history?limit=50`, { cache: "no-store" });
+      if (!res.ok) throw new Error((await res.json()).error ?? "History load failed");
+      setHistoryItems(await res.json());
+    } catch (err) {
+      setHistoryError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  async function saveServerOrder(nextServers: ServerDto[], previousServers: ServerDto[]) {
+    setServers(nextServers);
+    try {
+      const projectId = currentProject();
+      const res = await fetch("/api/servers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: projectId || undefined, orderedIds: nextServers.map((server) => server._id) }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Reorder failed");
+    } catch (err) {
+      setServers(previousServers);
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async function dropServer(targetIndex: number) {
+    const sourceIndex = servers.findIndex((server) => server._id === draggingId);
+    setDraggingId("");
+    if (sourceIndex < 0 || sourceIndex === targetIndex) return;
+    const nextServers = [...servers];
+    const [movedServer] = nextServers.splice(sourceIndex, 1);
+    nextServers.splice(targetIndex, 0, movedServer);
+    await saveServerOrder(nextServers, servers);
+  }
+
   const stats = useMemo(() => ({
     total: servers.length,
     up: servers.filter((s) => s.latestCheck?.status === "up").length,
-    degraded: servers.filter((s) => s.latestCheck?.status === "degraded").length,
+    degraded: servers.filter((s) => s.latestCheck?.status === "degraded" || s.latestCheck?.status === "not_found").length,
     down: servers.filter((s) => s.latestCheck?.status === "down").length,
   }), [servers]);
-  const cards = [["Total", stats.total, Globe2], ["Up", stats.up, Activity], ["Degraded", stats.degraded, Clock], ["Down", stats.down, Server]] as const;
+  const filteredServers = useMemo(() => servers.filter((server) => {
+    const status = server.latestCheck?.status;
+    if (statusFilter === "all") return true;
+    if (statusFilter === "degraded") return status === "degraded" || status === "not_found";
+    return status === statusFilter;
+  }), [servers, statusFilter]);
+  const cards = [["Total", stats.total, Globe2, "all"], ["Up", stats.up, Activity, "up"], ["Degraded", stats.degraded, Clock, "degraded"], ["Down", stats.down, Server, "down"]] as const;
 
   return <main className="space-y-6">
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div><h1 className="text-3xl font-semibold text-white">Dashboard</h1><p className="text-slate-400">Current project server health.</p></div>
     </div>
-    <section className="grid gap-4 md:grid-cols-4">{cards.map(([label, value, Icon]) => <div key={label} className="rounded-3xl border border-white/10 bg-white/[0.04] p-5"><div className="flex items-center justify-between text-slate-400"><span>{label}</span><Icon size={20}/></div><div className="mt-4 text-4xl font-semibold text-white">{value}</div></div>)}</section>
+    <section className="grid gap-4 md:grid-cols-4">{cards.map(([label, value, Icon, filter]) => <button key={label} type="button" onClick={() => setStatusFilter(filter)} className={`rounded-3xl border p-5 text-left transition hover:border-cyan-400/40 hover:bg-white/[0.07] ${statusFilter === filter ? "border-cyan-400/60 bg-cyan-400/10" : "border-white/10 bg-white/[0.04]"}`}><div className="flex items-center justify-between text-slate-400"><span>{label}</span><Icon size={20}/></div><div className="mt-4 text-4xl font-semibold text-white">{value}</div></button>)}</section>
     {error && <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-200">{error}</div>}
     {loading && <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 3 }).map((_, index) => <div key={index} className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04]"><div className="h-44 animate-pulse bg-white/5"/><div className="space-y-4 p-5"><div className="h-5 w-2/3 animate-pulse rounded bg-white/10"/><div className="h-4 w-full animate-pulse rounded bg-white/5"/><div className="grid grid-cols-3 gap-2">{Array.from({ length: 3 }).map((__, item) => <div key={item} className="h-16 animate-pulse rounded-2xl bg-black/25"/>)}</div></div></div>)}</section>}
     {!loading && !error && servers.length === 0 && <section className="rounded-3xl border border-dashed border-cyan-400/30 bg-cyan-400/5 p-10 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-200"><Server size={22}/></div><h2 className="mt-4 text-xl font-semibold text-white">No servers yet</h2><p className="mx-auto mt-2 max-w-md text-sm text-slate-400">Add your first server to start monitoring uptime, response time, and screenshots.</p><Link href="/servers" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 hover:bg-cyan-300"><Plus size={18}/> Add server</Link></section>}
-    <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{servers.map((server) => {
+    {!loading && !error && statusFilter !== "all" && filteredServers.length === 0 && <section className="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] p-8 text-center text-slate-400">No {statusFilter} servers.</section>}
+    <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{filteredServers.map((server) => {
+      const index = servers.findIndex((item) => item._id === server._id);
       const status = server.latestCheck?.status ?? "unknown";
-      return <article key={server._id} className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20">
-        {server.latestCheck?.screenshotFileId ? <div className="relative h-44 w-full bg-slate-950"><Image src={`/api/screenshots/${server.latestCheck.screenshotFileId}`} alt={server.name} fill className="object-contain opacity-90" unoptimized/></div> : <div className="flex h-44 items-center justify-center bg-slate-900 text-slate-500">No screenshot</div>}
-        <div className="space-y-4 p-5"><div className="flex items-start justify-between gap-3"><div><Link href={`/servers/${server._id}`} className="text-xl font-semibold text-white hover:text-cyan-300">{server.name}</Link><p className="mt-1 truncate text-sm text-slate-400">{server.url}</p></div><span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${statusStyle[status]}`}>{status}</span></div>
+      return <article key={server._id} draggable onDragStart={(event) => { setDraggingId(server._id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={() => dropServer(index)} onDragEnd={() => setDraggingId("")} className={`overflow-hidden rounded-3xl border bg-white/[0.04] shadow-xl shadow-black/20 transition ${draggingId === server._id ? "scale-[0.98] border-cyan-400/60 opacity-60" : "border-white/10"}`}>
+        {server.latestCheck?.screenshotFileId ? <div className="relative h-44 w-full bg-slate-950"><button type="button" onClick={() => setLightbox({ src: `/api/screenshots/${server.latestCheck!.screenshotFileId}`, alt: server.name })} className="absolute inset-0 z-10 cursor-zoom-in" aria-label={`Preview screenshot for ${server.name}`} /><Image src={`/api/screenshots/${server.latestCheck.screenshotFileId}`} alt={server.name} fill className="object-contain opacity-90" unoptimized/></div> : <div className="flex h-44 items-center justify-center bg-slate-900 text-slate-500">No screenshot</div>}
+        <div className="space-y-4 p-5"><div className="flex items-start justify-between gap-3"><div><Link href={`/servers/${server._id}`} className="text-xl font-semibold text-white hover:text-cyan-300">{server.name}</Link><p className="mt-1 truncate text-sm text-slate-400">{server.url}</p></div><div className="flex items-center gap-2"><span className="cursor-grab rounded-full border border-white/10 bg-black/20 p-2 text-slate-400 active:cursor-grabbing" title="Drag to reorder" aria-label={`Drag ${server.name} to reorder`}><GripVertical size={15}/></span><span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${statusStyle[status]}`}>{statusLabel(status)}</span></div></div>
         <div className="grid grid-cols-3 gap-2 text-sm"><div className="rounded-2xl bg-black/25 p-3"><p className="text-slate-500">24h</p><b>{pct(server.uptime24h)}</b></div><div className="rounded-2xl bg-black/25 p-3"><p className="text-slate-500">10d</p><b>{pct(server.uptime10d)}</b></div><div className="rounded-2xl bg-black/25 p-3"><p className="text-slate-500">RT</p><b>{server.latestCheck?.responseTimeMs ? `${server.latestCheck.responseTimeMs}ms` : "—"}</b></div></div>
-        <p className="text-xs text-slate-500">Last checked: {fmt(server.latestCheck?.checkedAt)}</p><button onClick={() => checkNow(server._id)} disabled={checkingId === server._id} className="w-full rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-200 hover:bg-white/10 disabled:cursor-wait disabled:opacity-60">{checkingId === server._id ? "Checking..." : "Check now"}</button></div>
+        <p className="text-xs text-slate-500">Last checked: {fmt(server.latestCheck?.checkedAt)}</p><div className="grid grid-cols-2 gap-2"><button onClick={() => checkNow(server._id)} disabled={checkingId === server._id} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-200 hover:bg-white/10 disabled:cursor-wait disabled:opacity-60">{checkingId === server._id ? "Checking..." : "Check now"}</button><button onClick={() => openHistory(server)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-200 hover:bg-white/10"><History size={15}/> History</button></div></div>
       </article>})}</section>
-  </main>;
+  {lightbox ? (<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4" role="dialog" aria-modal="true" aria-label="Screenshot preview" onClick={() => setLightbox(null)}><div className="relative w-full max-w-6xl overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-2xl" onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => setLightbox(null)} className="absolute right-3 top-3 z-10 rounded-full bg-white/10 px-3 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20">Close</button><div className="relative aspect-video w-full bg-black"><Image src={lightbox.src} alt={lightbox.alt} fill className="object-contain" unoptimized sizes="100vw" /></div></div></div>) : null}
+  {historyServer ? (<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4" role="dialog" aria-modal="true" aria-label="Server history" onClick={() => setHistoryServer(null)}><div className="max-h-[85vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between gap-4 border-b border-white/10 p-5"><div><p className="text-xs uppercase tracking-[0.3em] text-cyan-300">History</p><h2 className="mt-1 text-2xl font-semibold text-white">{historyServer.name}</h2><p className="mt-1 text-sm text-slate-400">{historyServer.url}</p></div><button type="button" onClick={() => setHistoryServer(null)} className="rounded-full bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/20">Close</button></div><div className="max-h-[65vh] overflow-auto p-5">{historyLoading && <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center text-slate-300">Loading history...</div>}{historyError && <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-200">{historyError}</div>}{!historyLoading && !historyError && historyItems.length === 0 && <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center text-slate-400">No history yet.</div>}{!historyLoading && !historyError && historyItems.length > 0 && <table className="w-full min-w-[760px] text-left text-sm"><thead className="text-slate-500"><tr><th className="pb-3">Status</th><th>Checked</th><th>HTTP</th><th>Response</th><th>Error</th><th>Screenshot</th></tr></thead><tbody className="divide-y divide-white/10">{historyItems.map((item) => <tr key={item._id} className="text-slate-300"><td className="py-4"><span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${statusStyle[item.status]}`}>{statusLabel(item.status)}</span></td><td>{fmt(item.checkedAt)}</td><td>{item.httpStatus ?? "—"}</td><td>{item.responseTimeMs ? `${item.responseTimeMs}ms` : "—"}</td><td className="max-w-xs truncate text-rose-200">{item.error ?? ""}</td><td>{item.screenshotFileId ? <button type="button" onClick={() => setLightbox({ src: `/api/screenshots/${item.screenshotFileId}`, alt: `${historyServer.name} screenshot` })} className="text-cyan-300 hover:text-cyan-200">Open</button> : "—"}</td></tr>)}</tbody></table>}</div></div></div>) : null}</main>;
 }
-
-

@@ -130,11 +130,11 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
   }
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.12),_transparent_30rem),radial-gradient(circle_at_top_right,_rgba(168,85,247,0.12),_transparent_24rem),linear-gradient(180deg,_#05070d_0%,_#070b14_100%)] text-slate-100">
-      <div className="flex min-h-dvh">
+    <div className="h-dvh overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.12),_transparent_30rem),radial-gradient(circle_at_top_right,_rgba(168,85,247,0.12),_transparent_24rem),linear-gradient(180deg,_#05070d_0%,_#070b14_100%)] text-slate-100">
+      <div className="flex h-full min-h-0">
         <aside
           className={[
-            "fixed inset-y-0 left-0 z-40 w-72 border-r border-white/10 bg-slate-950/90 backdrop-blur-xl transition-transform duration-200 md:static md:translate-x-0",
+            "fixed inset-y-0 left-0 z-40 h-dvh w-72 shrink-0 border-r border-white/10 bg-slate-950/90 backdrop-blur-xl transition-transform duration-200 md:static md:translate-x-0",
             mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
             collapsed ? "md:w-20" : "md:w-72",
           ].join(" ")}
@@ -203,7 +203,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
 
         {mobileOpen ? <button type="button" aria-label="Close sidebar backdrop" className="fixed inset-0 z-30 bg-slate-950/60 md:hidden" onClick={() => setMobileOpen(false)} /> : null}
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
           <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
             <div className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6">
               <div className="flex items-center gap-3">
