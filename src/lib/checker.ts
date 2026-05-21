@@ -59,7 +59,7 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
       fileId = undefined;
     }
     const status = httpStatus === 404 ? "not_found" : responseTimeMs >= DEGRADED_THRESHOLD_MS ? "degraded" : "up";
-    await StatusCheckModel.create({
+    return await StatusCheckModel.create({
       serverId: server._id,
       url: checkUrl,
       status,
@@ -69,7 +69,7 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
     });
   } catch (err) {
     const responseTimeMs = Date.now() - startTime;
-    await StatusCheckModel.create({
+    return await StatusCheckModel.create({
       serverId: server._id,
       url: checkUrl,
       status: "down",

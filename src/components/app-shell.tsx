@@ -129,7 +129,9 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
     }
     setCurrentProjectId(value);
     writeStorage(STORAGE_KEYS.currentProjectId, value);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams();
+    const status = searchParams.get("status");
+    if (status) params.set("status", status);
     params.set("project", value);
     router.replace(`${pathname}?${params.toString()}`);
     router.refresh();

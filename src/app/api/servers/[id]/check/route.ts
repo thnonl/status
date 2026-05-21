@@ -13,6 +13,11 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
   await connectDb();
   const server = await ServerModel.findById(id);
   if (!server) return jsonError("Not found", 404);
-  checkServer(server).catch(console.error);
-  return Response.json({ queued: true });
+  const check = await checkServer(server);
+  return Response.json({
+    ...check.toObject(),
+    _id: check._id.toString(),
+    serverId: check.serverId.toString(),
+    screenshotFileId: check.screenshotFileId?.toString(),
+  });
 }

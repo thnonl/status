@@ -6,16 +6,22 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Camera, RefreshCw } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { ServerDto, StatusCheckDto } from "@/lib/types";
+import type { CheckStatus, ServerDto, StatusCheckDto } from "@/lib/types";
 
-const pill = {
+const pill: Record<CheckStatus, string> = {
   up: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
   degraded: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
   not_found: "bg-yellow-500/15 text-yellow-300 ring-yellow-500/30",
   down: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
 };
 
-function statusLabel(status: string) { return status === "not_found" ? "Not found" : status; }
+const statusLabels: Record<CheckStatus, string> = {
+  up: "Operational",
+  degraded: "Slow response",
+  not_found: "Not found",
+  down: "Offline",
+};
+function statusLabel(status: string) { return statusLabels[status as CheckStatus] ?? status; }
 
 function when(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
@@ -26,6 +32,7 @@ function ServerDetailsPageContent() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const screenshotParam = searchParams.get("screenshot");
   const [server, setServer] = useState<ServerDto | null>(null);
   const [history, setHistory] = useState<StatusCheckDto[]>([]);
   const status = searchParams.get("status") ?? "";
@@ -73,6 +80,12 @@ function ServerDetailsPageContent() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [lightbox, setQuery]);
 
+  useEffect(() => {
+    if (!screenshotParam || lightbox?.src.endsWith(screenshotParam)) return;
+    const item = history.find((check) => check.screenshotFileId === screenshotParam);
+    if (item) setLightbox({ src: `/api/screenshots/${screenshotParam}`, checkedAt: item.checkedAt }); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [history, lightbox?.src, screenshotParam]);
+
   function openScreenshot(item: StatusCheckDto) {
     if (!item.screenshotFileId) return;
     setLightbox({ src: `/api/screenshots/${item.screenshotFileId}`, checkedAt: item.checkedAt });
@@ -96,8 +109,8 @@ function ServerDetailsPageContent() {
     response: item.responseTimeMs ?? 0,
   })), [history]);
 
-  const distribution = useMemo(() => ["up", "degraded", "not_found", "down"].map((name) => ({
-    name,
+  const distribution = useMemo(() => (["up", "degraded", "not_found", "down"] as CheckStatus[]).map((name) => ({
+    name: statusLabel(name),
     count: history.filter((item) => item.status === name).length,
   })), [history]);
 
@@ -162,10 +175,10 @@ function ServerDetailsPageContent() {
           <h2 className="text-lg font-semibold text-white">History timeline</h2>
           <select value={status} onChange={(e) => setStatusQuery(e.target.value)} className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-slate-200">
             <option value="">All statuses</option>
-            <option value="up">Up</option>
-            <option value="degraded">Degraded</option>
+            <option value="up">Operational</option>
+            <option value="degraded">Slow response</option>
             <option value="not_found">Not found</option>
-            <option value="down">Down</option>
+            <option value="down">Offline</option>
           </select>
         </div>
         <div className="overflow-x-auto">
