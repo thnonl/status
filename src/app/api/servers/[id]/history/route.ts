@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { connectDb } from "@/lib/db";
 import { StatusCheckModel } from "@/models/StatusCheck";
+import { ServerModel } from "@/models/Server";
+import { deleteScreenshot } from "@/lib/gridfs";
 import { jsonError } from "@/lib/utils";
 import mongoose from "mongoose";
 
@@ -26,5 +28,19 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       screenshotFileId: c.screenshotFileId?.toString(),
     })),
   );
+}
+
+export async function DELETE(_req: NextRequest, { params }: Ctx) {
+  const { id } = await params;
+  if (!mongoose.isValidObjectId(id)) return jsonError("Invalid id", 404);
+  await connectDb();
+  const server = await ServerModel.findById(id).lean();
+  if (!server) return jsonError("Not found", 404);
+  const checks = await StatusCheckModel.find({ serverId: id }, "screenshotFileId").lean();
+  for (const check of checks) {
+    if (check.screenshotFileId) await deleteScreenshot(new mongoose.Types.ObjectId(check.screenshotFileId.toString()));
+  }
+  await StatusCheckModel.deleteMany({ serverId: id });
+  return Response.json({ deleted: checks.length });
 }
 
