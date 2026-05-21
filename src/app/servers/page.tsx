@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ConfirmModal, Modal } from "@/components/Modal";
 import type { ProjectDto, ServerDto } from "@/lib/types";
@@ -8,7 +8,7 @@ import type { ProjectDto, ServerDto } from "@/lib/types";
 type FormState = { name: string; url: string; healthRoute: string; screenshotRoute: string; description: string; tags: string; enabled: boolean };
 const blank: FormState = { name: "", url: "", healthRoute: "", screenshotRoute: "", description: "", tags: "", enabled: true };
 
-export default function ServersPage() {
+function ServersPageContent() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -65,6 +65,14 @@ export default function ServersPage() {
     {modalOpen && <Modal title={editing ? "Edit server" : "Create server"} onClose={closeModal}><form onSubmit={save} className="space-y-3"><input required placeholder="Name" value={form.name} onChange={(e)=>setForm({...form,name:e.target.value})} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><input required placeholder="https://example.com" value={form.url} onChange={(e)=>setForm({...form,url:e.target.value})} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><input placeholder="Health route (default /health)" value={form.healthRoute} onChange={(e)=>setForm({...form,healthRoute:e.target.value})} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><input placeholder="Screenshot route (default server URL)" value={form.screenshotRoute} onChange={(e)=>setForm({...form,screenshotRoute:e.target.value})} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><textarea placeholder="Description" value={form.description} onChange={(e)=>setForm({...form,description:e.target.value})} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><input placeholder="tags" value={form.tags} onChange={(e)=>setForm({...form,tags:e.target.value})} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white"/><button type="button" role="switch" aria-checked={form.enabled} onClick={()=>setForm({...form,enabled:!form.enabled})} className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left transition hover:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-cyan-400/40"><span><span className="block text-sm font-medium text-white">Enabled</span><span className="mt-1 block text-xs text-slate-400">{form.enabled ? "Server will be monitored." : "Server monitoring is paused."}</span></span><span className={`relative inline-flex h-6 w-10 shrink-0 rounded-full border transition ${form.enabled ? "border-cyan-300/40 bg-cyan-400" : "border-white/10 bg-slate-800"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-lg transition ${form.enabled ? "left-5" : "left-1"}`} /></span></button>{error && <p className="text-rose-300">{error}</p>}<div className="flex justify-end gap-3"><button type="button" onClick={closeModal} className="rounded-xl border border-white/10 px-3 py-2">Cancel</button><button className="rounded-xl bg-cyan-400 px-3 py-2 font-semibold text-slate-950">Save</button></div></form></Modal>}
     {deleting && <ConfirmModal title="Delete server" message={`Delete ${deleting.name} and all history/screenshots?`} onClose={closeModal} onConfirm={remove}/>} 
   </main>;
+}
+
+export default function ServersPage() {
+  return (
+    <Suspense fallback={null}>
+      <ServersPageContent />
+    </Suspense>
+  );
 }
 
 

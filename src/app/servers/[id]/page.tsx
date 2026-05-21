@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Camera, RefreshCw } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -21,7 +21,7 @@ function when(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
-export default function ServerDetailsPage() {
+function ServerDetailsPageContent() {
   const params = useParams<{ id: string }>();
   const pathname = usePathname();
   const router = useRouter();
@@ -267,6 +267,14 @@ export default function ServerDetailsPage() {
         </div>
       ) : null}
     </main>
+  );
+}
+
+export default function ServerDetailsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ServerDetailsPageContent />
+    </Suspense>
   );
 }
 
