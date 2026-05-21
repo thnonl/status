@@ -1,36 +1,18 @@
+name: status-dashboard
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    depends_on:
-      mongodb:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: ${PORT:-3000}
       HOSTNAME: 0.0.0.0
-      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/status-dashboard}
+      MONGODB_URI: ${MONGODB_URI:?MONGODB_URI is required}
       CHECK_INTERVAL_MINUTES: ${CHECK_INTERVAL_MINUTES:-30}
       RETENTION_DAYS: ${RETENTION_DAYS:-10}
       NEXT_TELEMETRY_DISABLED: ${NEXT_TELEMETRY_DISABLED:-1}
     ports:
       - "${APP_PORT:-3000}:3000"
-
-  mongodb:
-    image: mongo:7
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-status-dashboard}
-    volumes:
-      - mongodb_data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-
-volumes:
-  mongodb_data:
