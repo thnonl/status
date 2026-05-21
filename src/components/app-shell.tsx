@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, FolderKanban, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Server } from "lucide-react";
 
 type ProjectItem = {
@@ -35,6 +35,7 @@ function writeStorage(key: string, value: string) {
 export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [ready, setReady] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -48,13 +49,20 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const savedCollapsed = readStorage(STORAGE_KEYS.collapsed);
-      const savedProject = readStorage(STORAGE_KEYS.currentProjectId);
+      const savedProject = searchParams.get("project") ?? readStorage(STORAGE_KEYS.currentProjectId);
       setCollapsed(savedCollapsed === "1");
       setCurrentProjectId(savedProject ?? "");
       setReady(true);
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [searchParams]);
+
+  const hrefWithProject = useCallback((href: string) => {
+    if (!currentProjectId) return href;
+    const params = new URLSearchParams();
+    params.set("project", currentProjectId);
+    return `${href}?${params.toString()}`;
+  }, [currentProjectId]);
 
   useEffect(() => {
     if (!ready) return;
@@ -121,7 +129,10 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
     }
     setCurrentProjectId(value);
     writeStorage(STORAGE_KEYS.currentProjectId, value);
-    window.location.reload();
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("project", value);
+    router.replace(`${pathname}?${params.toString()}`);
+    router.refresh();
   }
 
   function refreshPage() {
@@ -169,7 +180,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                 return (
                   <Link
                     key={href}
-                    href={href}
+                    href={hrefWithProject(href)}
                     onClick={() => setMobileOpen(false)}
                     className={[
                       "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition",

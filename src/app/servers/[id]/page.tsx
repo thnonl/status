@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Camera, RefreshCw } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ServerDto, StatusCheckDto } from "@/lib/types";
@@ -23,11 +23,24 @@ function when(value: string) {
 
 export default function ServerDetailsPage() {
   const params = useParams<{ id: string }>();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [server, setServer] = useState<ServerDto | null>(null);
   const [history, setHistory] = useState<StatusCheckDto[]>([]);
-  const [status, setStatus] = useState("");
+  const status = searchParams.get("status") ?? "";
   const [error, setError] = useState("");
   const [lightbox, setLightbox] = useState<{ src: string; checkedAt: string } | null>(null);
+
+  const setQuery = useCallback((updates: Record<string, string | null>) => {
+    const queryParams = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) queryParams.set(key, value);
+      else queryParams.delete(key);
+    }
+    const query = queryParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams]);
 
   const load = useCallback(async () => {
     setError("");
@@ -53,12 +66,25 @@ export default function ServerDetailsPage() {
     if (!lightbox) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setLightbox(null);
+      if (event.key === "Escape") { setLightbox(null); setQuery({ screenshot: null }); }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [lightbox]);
+  }, [lightbox, setQuery]);
+
+  function openScreenshot(item: StatusCheckDto) {
+    if (!item.screenshotFileId) return;
+    setLightbox({ src: `/api/screenshots/${item.screenshotFileId}`, checkedAt: item.checkedAt });
+    setQuery({ screenshot: item.screenshotFileId });
+  }
+
+  function closeScreenshot() { setLightbox(null); setQuery({ screenshot: null }); }
+
+  function setStatusQuery(value: string) { setQuery({ status: value || null }); }
+
+  const project = searchParams.get("project");
+  const dashboardHref = project ? `/?project=${encodeURIComponent(project)}` : "/";
 
   async function checkNow() {
     await fetch(`/api/servers/${params.id}/check`, { method: "POST" });
@@ -81,7 +107,7 @@ export default function ServerDetailsPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-3 px-3 py-2 md:px-8">
       <header className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-cyan-300"><ArrowLeft size={16} /> Dashboard</Link>
+        <Link href={dashboardHref} className="inline-flex items-center gap-2 text-sm text-cyan-300"><ArrowLeft size={16} /> Dashboard</Link>
         <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-lg font-semibold text-white">{server.name}</h1>
@@ -134,7 +160,7 @@ export default function ServerDetailsPage() {
       <section className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-lg font-semibold text-white">History timeline</h2>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-slate-200">
+          <select value={status} onChange={(e) => setStatusQuery(e.target.value)} className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-slate-200">
             <option value="">All statuses</option>
             <option value="up">Up</option>
             <option value="degraded">Degraded</option>
@@ -166,7 +192,7 @@ export default function ServerDetailsPage() {
                         href={`/api/screenshots/${item.screenshotFileId}`}
                         onClick={(event) => {
                           event.preventDefault();
-                          setLightbox({ src: `/api/screenshots/${item.screenshotFileId}`, checkedAt: item.checkedAt });
+                          openScreenshot(item);
                         }}
                       >
                         <Camera size={15}/> Open
@@ -187,7 +213,7 @@ export default function ServerDetailsPage() {
             href={`/api/screenshots/${item.screenshotFileId}`}
             onClick={(event) => {
               event.preventDefault();
-              setLightbox({ src: `/api/screenshots/${item.screenshotFileId}`, checkedAt: item.checkedAt });
+              openScreenshot(item);
             }}
             className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]"
           >
@@ -211,7 +237,7 @@ export default function ServerDetailsPage() {
           role="dialog"
           aria-modal="true"
           aria-label="Screenshot lightbox"
-          onClick={() => setLightbox(null)}
+          onClick={closeScreenshot}
         >
           <div
             className="relative w-full max-w-5xl overflow-hidden rounded-xl border border-white/10 bg-slate-950 shadow-2xl"
@@ -219,7 +245,7 @@ export default function ServerDetailsPage() {
           >
             <button
               type="button"
-              onClick={() => setLightbox(null)}
+              onClick={closeScreenshot}
               className="absolute right-3 top-3 z-10 rounded-full bg-white/10 px-3 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20"
             >
               Close

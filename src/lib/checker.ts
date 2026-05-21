@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 
 const DEGRADED_THRESHOLD_MS = 5000;
 const TIMEOUT_MS = 30000;
+const SCREENSHOT_SETTLE_MS = 5000;
 const SCREENSHOT_VIEWPORT = { width: 1920, height: 1080 };
 
 function routeUrl(server: Pick<ServerDocument, "url">, route?: string) {
@@ -48,6 +49,7 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
         timeout: TIMEOUT_MS,
       });
       await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => undefined);
+      await page.waitForTimeout(SCREENSHOT_SETTLE_MS);
       const screenshotBuf = await page.screenshot({ fullPage: true });
       fileId = await saveScreenshot(
         `screenshot-${server._id}-${Date.now()}.png`,
