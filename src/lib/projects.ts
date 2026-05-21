@@ -15,14 +15,9 @@ export function slugifyProject(value: string) {
 
 export async function ensureDefaultProjectExists(): Promise<ProjectDocument> {
   await connectDb();
-  let project = await ProjectModel.findOne({ isDefault: true });
-  if (!project) {
-    project = await ProjectModel.findOne({ slug: DEFAULT_PROJECT_SLUG });
-    if (project) {
-      project.isDefault = true;
-      await project.save();
-    }
-  }
+  let project = await ProjectModel.findOne({ slug: DEFAULT_PROJECT_SLUG });
+  project ??= await ProjectModel.findOne({ isDefault: true }).sort({ createdAt: 1 });
+
   if (!project) {
     project = await ProjectModel.create({
       name: "Default",
@@ -30,6 +25,21 @@ export async function ensureDefaultProjectExists(): Promise<ProjectDocument> {
       slug: DEFAULT_PROJECT_SLUG,
       isDefault: true,
     });
+  } else {
+    const duplicateDefaults = await ProjectModel.find({
+      _id: { $ne: project._id },
+      $or: [{ isDefault: true }, { slug: DEFAULT_PROJECT_SLUG }],
+    });
+
+    for (const duplicate of duplicateDefaults) {
+      await ServerModel.updateMany({ projectId: duplicate._id }, { $set: { projectId: project._id } });
+      await ProjectModel.findByIdAndDelete(duplicate._id);
+    }
+
+    project.name = project.name || "Default";
+    project.slug = DEFAULT_PROJECT_SLUG;
+    project.isDefault = true;
+    await project.save();
   }
 
   await ServerModel.updateMany(
