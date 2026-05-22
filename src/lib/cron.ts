@@ -18,9 +18,12 @@ export function initCron() {
     const { ServerModel } = await import("@/models/Server");
     const { checkServer } = await import("./checker");
     await connectDb();
+    const { notifyServerDown } = await import("./push");
     const servers = await ServerModel.find({ enabled: true }).lean();
     for (const server of servers) {
-      checkServer(server as Parameters<typeof checkServer>[0]).catch(console.error);
+      checkServer(server as Parameters<typeof checkServer>[0])
+        .then((check) => { if (check.status === "down") notifyServerDown(check).catch(console.error); })
+        .catch(console.error);
     }
   });
 

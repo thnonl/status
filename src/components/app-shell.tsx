@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, FolderKanban, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Server } from "lucide-react";
+import { Bell, BellOff, BellRing, ChevronDown, FolderKanban, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Server } from "lucide-react";
+import { useServiceWorker } from "@/hooks/useServiceWorker";
 
 type ProjectItem = {
   _id?: string;
@@ -45,6 +46,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
   const [refreshing, setRefreshing] = useState(false);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const projectMenuRef = useRef<HTMLDivElement>(null);
+  const pushSW = useServiceWorker(currentProjectId);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -140,6 +142,20 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
   function refreshPage() {
     setRefreshing(true);
     window.location.reload();
+  }
+
+  async function handlePushToggle() {
+    if (pushSW.isSubscribed) {
+      await pushSW.unsubscribe();
+    } else {
+      let perm = pushSW.permission;
+      if (perm !== "granted") {
+        const granted = await pushSW.requestPermission();
+        if (!granted) return;
+        perm = "granted";
+      }
+      await pushSW.subscribe();
+    }
   }
 
   return (
@@ -294,6 +310,17 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                 >
                   <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
                 </button>
+                {"serviceWorker" in (typeof navigator !== "undefined" ? navigator : {}) && (
+                  <button
+                    type="button"
+                    onClick={handlePushToggle}
+                    title={pushSW.isSubscribed ? "Tắt thông báo server down" : pushSW.permission === "denied" ? "Thông báo bị chặn — vui lòng mở lại trong cài đặt trình duyệt" : "Bật thông báo khi server down (hoạt động khi tắt tab)"}
+                    disabled={pushSW.permission === "denied" || !pushSW.registration}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${pushSW.isSubscribed ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20" : "border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"}`}
+                  >
+                    {pushSW.isSubscribed ? <BellRing size={16} /> : pushSW.permission === "denied" ? <BellOff size={16} /> : <Bell size={16} />}
+                  </button>
+                )}
               </div>
             </div>
           </header>
