@@ -76,6 +76,8 @@ function DashboardPageContent() {
   const historyParam = searchParams.get("history");
   const screenshotParam = searchParams.get("screenshot");
   const suppressHistoryRef = useRef(false);
+  const suppressScreenshotRef = useRef(false);
+  const loadSeqRef = useRef(0);
   const [servers, setServers] = useState<ServerDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -124,6 +126,7 @@ function DashboardPageContent() {
 
   const load = useCallback(
     async (options?: { silent?: boolean }) => {
+      const seq = ++loadSeqRef.current;
       if (!options?.silent) setLoading(true);
       setError("");
       try {
@@ -133,11 +136,13 @@ function DashboardPageContent() {
           { cache: "no-store" },
         );
         if (!res.ok) throw new Error((await res.json()).error ?? "Load failed");
-        setServers(await res.json());
+        const data = await res.json();
+        if (seq === loadSeqRef.current) setServers(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        if (seq === loadSeqRef.current)
+          setError(err instanceof Error ? err.message : String(err));
       } finally {
-        if (!options?.silent) setLoading(false);
+        if (seq === loadSeqRef.current && !options?.silent) setLoading(false);
       }
     },
     [projectParam],
@@ -186,6 +191,7 @@ function DashboardPageContent() {
   }
 
   function closeScreenshot() {
+    suppressScreenshotRef.current = true;
     setLightbox(null);
     setQuery({ screenshot: null });
   }
@@ -200,7 +206,12 @@ function DashboardPageContent() {
   }
 
   useEffect(() => {
-    if (!screenshotParam || lightbox?.id === screenshotParam) return;
+    if (!screenshotParam) {
+      suppressScreenshotRef.current = false;
+      return;
+    }
+    if (suppressScreenshotRef.current || lightbox?.id === screenshotParam)
+      return;
     const server = servers.find(
       (item) => item.latestCheck?.screenshotFileId === screenshotParam,
     );
@@ -211,6 +222,14 @@ function DashboardPageContent() {
         id: screenshotParam,
       }); // eslint-disable-line react-hooks/set-state-in-effect
   }, [lightbox?.id, screenshotParam, servers]);
+
+  useEffect(() => {
+    setLightbox(null);
+    setHistoryServer(null);
+    setHistoryItems([]);
+    suppressHistoryRef.current = false;
+    suppressScreenshotRef.current = false;
+  }, [projectParam]);
 
   function projectHref(href: string) {
     const project = searchParams.get("project");
@@ -713,7 +732,7 @@ function DashboardPageContent() {
             <button
               type="button"
               onClick={closeScreenshot}
-              className="absolute right-3 top-3 z-10 rounded-full bg-white/10 px-3 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20"
+              className="absolute right-3 top-3 z-10 rounded-full border border-white/20 bg-slate-950/90 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-black/40 backdrop-blur hover:bg-slate-900"
             >
               Close
             </button>
