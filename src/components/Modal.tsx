@@ -103,7 +103,7 @@ export function Modal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3" onMouseDown={onClose}>
       <div
         ref={dialogRef}
         role="dialog"
@@ -112,23 +112,24 @@ export function Modal({
         aria-describedby={descriptionId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="w-full max-w-2xl rounded-xl border border-white/10 bg-slate-950 p-3 shadow-2xl outline-none"
+        onMouseDown={(event) => event.stopPropagation()}
+        className="w-full max-w-2xl rounded-xl border border-white/10 bg-slate-950 p-6 shadow-2xl outline-none"
       >
-        <div className="mb-3 flex items-center justify-between">
-          <h2 id={titleId} className="text-lg font-semibold text-white">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 id={titleId} className="text-xl font-semibold text-white">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded-xl px-3 py-1 text-slate-400 hover:bg-white/10 hover:text-white"
+            className="rounded-lg px-3 py-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
           >
             ✕
           </button>
         </div>
         {children}
-        {footer && <div className="mt-3 flex justify-end gap-3">{footer}</div>}
+        {footer && <div className="mt-6 flex justify-end gap-3">{footer}</div>}
       </div>
     </div>
   );
@@ -154,7 +155,7 @@ export function ConfirmModal({
       <p id={messageId} className="text-slate-300">
         {message}
       </p>
-      <div className="mt-3 flex justify-end gap-3">
+      <div className="mt-6 flex justify-end gap-3">
         <button
           type="button"
           onClick={onClose}
@@ -173,3 +174,4 @@ export function ConfirmModal({
     </Modal>
   );
 }
+

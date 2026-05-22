@@ -258,7 +258,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                     disabled={projectLoading}
                     aria-haspopup="listbox"
                     aria-expanded={projectMenuOpen}
-                    className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left shadow-lg shadow-black/10 transition hover:border-cyan-400/30 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 py-2 pl-3 pr-4 text-left shadow-lg shadow-black/10 transition hover:border-cyan-400/30 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <span className="min-w-0">
                       <span className="block text-[10px] uppercase tracking-[0.25em] text-slate-400">Project</span>
@@ -301,31 +301,33 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                     </div>
                   ) : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={refreshPage}
-                  disabled={refreshing}
-                  title="Làm mới dữ liệu"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-3 py-2 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-wait disabled:opacity-70"
-                >
-                  <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-                </button>
-                {"serviceWorker" in (typeof navigator !== "undefined" ? navigator : {}) && (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={handlePushToggle}
+                    onClick={refreshPage}
+                  disabled={refreshing}
+                  title="Làm mới dữ liệu"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-400 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-wait disabled:opacity-70"
+                  >
+                    <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+                  </button>
+                  {"serviceWorker" in (typeof navigator !== "undefined" ? navigator : {}) && (
+                    <button
+                      type="button"
+                      onClick={handlePushToggle}
                     title={pushSW.isSubscribed ? "Tắt thông báo server down" : pushSW.permission === "denied" ? "Thông báo bị chặn — vui lòng mở lại trong cài đặt trình duyệt" : "Bật thông báo khi server down (hoạt động khi tắt tab)"}
                     disabled={pushSW.permission === "denied" || !pushSW.registration}
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${pushSW.isSubscribed ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20" : "border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"}`}
-                  >
-                    {pushSW.isSubscribed ? <BellRing size={16} /> : pushSW.permission === "denied" ? <BellOff size={16} /> : <Bell size={16} />}
-                  </button>
-                )}
+                    className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${pushSW.isSubscribed ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20" : "border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"}`}
+                    >
+                      {pushSW.isSubscribed ? <BellRing size={16} /> : pushSW.permission === "denied" ? <BellOff size={16} /> : <Bell size={16} />}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 px-3 py-2 md:px-3">
+          <main className="min-w-0 flex-1 p-6">
             <div className="mx-auto w-full max-w-7xl">{children}</div>
           </main>
         </div>
@@ -333,3 +335,5 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
     </div>
   );
 }
+
+

@@ -33,7 +33,7 @@ export function ConfirmModal({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-medium text-slate-200 transition hover:bg-white/10"
+            className="h-10 rounded-lg border border-white/10 bg-white/5 px-4 font-medium text-slate-200 transition-colors hover:bg-white/10"
           >
             {cancelLabel}
           </button>
@@ -42,8 +42,8 @@ export function ConfirmModal({
             onClick={onConfirm}
             className={
               danger
-                ? "rounded-xl bg-rose-500 px-3 py-2 font-semibold text-white transition hover:bg-rose-400"
-                : "rounded-xl bg-cyan-400 px-3 py-2 font-semibold text-slate-950 transition hover:bg-cyan-300"
+                ? "h-10 rounded-lg bg-rose-500 px-4 font-semibold text-white transition-colors hover:bg-rose-400"
+                : "h-10 rounded-lg bg-cyan-400 px-4 font-semibold text-slate-950 transition-colors hover:bg-cyan-300"
             }
           >
             {confirmLabel}
@@ -51,7 +51,8 @@ export function ConfirmModal({
         </>
       }
     >
-      {description ? <p className="text-slate-300">{description}</p> : null}
+      {description ? <p className="text-sm leading-relaxed text-slate-300">{description}</p> : null}
     </Modal>
   );
 }
+
