@@ -438,7 +438,7 @@ function ProjectDashboardContent() {
   ] as const;
 
   return (
-    <main className="space-y-3">
+    <main className="page-shell">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-white">
@@ -793,7 +793,7 @@ function ProjectDashboardContent() {
                   type="button"
                   onClick={clearHistory}
                   disabled={clearingHistory || historyItems.length === 0}
-                  className="h-10 rounded-lg border border-rose-500/30 px-4 text-sm font-semibold text-rose-200 hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ui-btn ui-btn-danger disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {clearingHistory ? "Clearing..." : "Clear history"}
                 </button>
@@ -825,7 +825,7 @@ function ProjectDashboardContent() {
                   </div>
                 )}
               {!historyLoading && !historyError && historyItems.length > 0 && (
-                <table className="w-full min-w-[760px] text-left text-sm">
+                <table className="ui-table min-w-[760px]">
                   <thead className="text-slate-500">
                     <tr>
                       <th className="pb-2 font-medium">Status</th>

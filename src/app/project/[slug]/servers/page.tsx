@@ -27,9 +27,6 @@ const blank: FormState = {
   enabled: true,
 };
 
-const inputCls =
-  "h-11 w-full rounded-lg border border-white/10 bg-black/30 px-3.5 text-sm text-white placeholder:text-slate-500 transition-colors focus:border-cyan-400/40 focus:bg-black/40";
-const btnCls = "h-10 rounded-lg px-4 text-sm font-medium transition-colors";
 
 export default function ProjectServersPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -142,7 +139,7 @@ export default function ProjectServersPage() {
 
   if (projectNotFound) {
     return (
-      <main className="min-h-screen bg-slate-950 p-8 text-white">
+      <main className="page-shell">
         <p className="text-rose-400">Project &quot;{slug}&quot; not found.</p>
         <Link href="/" className="mt-4 inline-block text-sm text-cyan-400 hover:underline">
           ← Home
@@ -152,22 +149,16 @@ export default function ProjectServersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-10 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <main className="page-shell">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div>
-            <Link
-              href={`/project/${slug}`}
-              className="mb-1 inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200"
-            >
-              ← Dashboard
-            </Link>
             <h1 className="text-2xl font-semibold tracking-tight text-white">Servers</h1>
           </div>
           <button
             onClick={openCreate}
-            className="h-10 rounded-lg bg-cyan-400 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-300"
+            className="ui-btn ui-btn-primary"
           >
             New server
           </button>
@@ -209,13 +200,13 @@ export default function ProjectServersPage() {
                 <div className="flex shrink-0 gap-2">
                   <button
                     onClick={() => openEdit(server)}
-                    className={`${btnCls} border border-white/10 text-slate-200 hover:bg-white/10`}
+                    className="ui-btn ui-btn-secondary"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => { setDeleting(server); setModalOpen(false); }}
-                    className={`${btnCls} border border-rose-500/30 text-rose-400 hover:bg-rose-500/10`}
+                    className="ui-btn ui-btn-danger"
                   >
                     Delete
                   </button>
@@ -233,7 +224,7 @@ export default function ProjectServersPage() {
             </div>
             <button
               onClick={openCreate}
-              className="h-10 rounded-lg bg-cyan-400 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-300"
+              className="ui-btn ui-btn-primary"
             >
               New server
             </button>
@@ -253,7 +244,7 @@ export default function ProjectServersPage() {
                   placeholder="My Server"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className={inputCls}
+                  className="ui-input"
                 />
               </div>
               <div className="space-y-1.5">
@@ -263,7 +254,7 @@ export default function ProjectServersPage() {
                   placeholder="https://example.com"
                   value={form.url}
                   onChange={(e) => setForm({ ...form, url: e.target.value })}
-                  className={inputCls}
+                  className="ui-input"
                 />
               </div>
             </div>
@@ -274,7 +265,7 @@ export default function ProjectServersPage() {
                   placeholder="/health"
                   value={form.healthRoute}
                   onChange={(e) => setForm({ ...form, healthRoute: e.target.value })}
-                  className={inputCls}
+                  className="ui-input"
                 />
               </div>
               <div className="space-y-1.5">
@@ -283,7 +274,7 @@ export default function ProjectServersPage() {
                   placeholder="(defaults to server URL)"
                   value={form.screenshotRoute}
                   onChange={(e) => setForm({ ...form, screenshotRoute: e.target.value })}
-                  className={inputCls}
+                  className="ui-input"
                 />
               </div>
             </div>
@@ -294,7 +285,7 @@ export default function ProjectServersPage() {
                 rows={2}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className={`${inputCls} h-auto resize-none`}
+                className="ui-input h-auto resize-none"
               />
             </div>
             <div className="space-y-1.5">
@@ -305,7 +296,7 @@ export default function ProjectServersPage() {
                 placeholder="production, api, critical"
                 value={form.tags}
                 onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                className={inputCls}
+                className="ui-input"
               />
             </div>
             <button
@@ -346,11 +337,11 @@ export default function ProjectServersPage() {
               <button
                 type="button"
                 onClick={closeModal}
-                className={`${btnCls} border border-white/10 text-slate-200 hover:bg-white/10`}
+                className="ui-btn ui-btn-secondary"
               >
                 Cancel
               </button>
-              <button className={`${btnCls} bg-cyan-400 font-semibold text-slate-950 hover:bg-cyan-300`}>
+              <button className="ui-btn ui-btn-primary">
                 Save
               </button>
             </div>

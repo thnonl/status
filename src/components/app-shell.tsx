@@ -184,15 +184,15 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
           ].join(" ")}
         >
           <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2">
-              <div className={collapsed ? "md:hidden" : "min-w-0"}>
+            <div className="flex h-14 items-center gap-3 border-b border-white/10 px-3">
+              <div className={collapsed ? "md:hidden" : "min-w-0 flex-1"}>
                 <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Status</p>
                 <h1 className="mt-1 truncate text-lg font-semibold text-white">Admin Console</h1>
               </div>
               <button
                 type="button"
                 onClick={() => setCollapsed((value) => !value)}
-                className="ml-auto hidden rounded-xl border border-white/10 p-2 text-slate-300 transition hover:bg-white/10 hover:text-white md:inline-flex"
+                className="hidden rounded-xl border border-white/10 p-2 text-slate-300 transition hover:bg-white/10 hover:text-white md:inline-flex"
                 aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               >
                 {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}

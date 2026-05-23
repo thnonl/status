@@ -156,8 +156,8 @@ function ServerDetailsPageContent() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-5xl px-4 py-10">
-        <Link href={dashboardHref} className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white">
+      <main className="page-shell">
+        <Link href={dashboardHref} className="page-breadcrumb mb-6">
           <ArrowLeft size={16} /> Back
         </Link>
         <p className="text-rose-400">{error}</p>
@@ -167,8 +167,8 @@ function ServerDetailsPageContent() {
 
   if (!server) {
     return (
-      <main className="mx-auto max-w-5xl px-4 py-10">
-        <Link href={dashboardHref} className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white">
+      <main className="page-shell">
+        <Link href={dashboardHref} className="page-breadcrumb mb-6">
           <ArrowLeft size={16} /> Back
         </Link>
         <p className="text-slate-400">Loading…</p>
@@ -177,10 +177,10 @@ function ServerDetailsPageContent() {
   }
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10">
+    <main className="page-shell">
       <div>
-        <Link href={dashboardHref} className="mb-4 inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white">
-          <ArrowLeft size={16} /> Back to project
+        <Link href={dashboardHref} className="page-breadcrumb mb-4">
+          <ArrowLeft size={16} /> Dashboard
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

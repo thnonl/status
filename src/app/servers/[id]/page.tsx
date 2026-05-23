@@ -163,7 +163,7 @@ function ServerDetailsPageContent() {
   if (!server) return <main className="p-3 text-slate-200">Loading...</main>;
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-4">
+    <main className="page-shell">
       <Link href={dashboardHref} className="inline-flex w-fit items-center gap-2 text-base font-semibold text-cyan-200 transition hover:text-cyan-100"><ArrowLeft size={18} /> Dashboard</Link>
       <header className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -223,7 +223,7 @@ function ServerDetailsPageContent() {
               <Trash2 size={15} /> {clearingHistory ? "Clearing..." : "Clear history"}
             </button>
             <div className="relative">
-              <select value={status} onChange={(e) => setStatusQuery(e.target.value)} className="h-10 min-w-40 appearance-none rounded-lg border border-white/10 bg-slate-950 py-2 pl-3 pr-11 text-sm font-medium text-slate-200 outline-none ring-cyan-400/30 transition hover:bg-slate-900 focus:ring-2">
+              <select value={status} onChange={(e) => setStatusQuery(e.target.value)} className="ui-select">
                 <option className="bg-slate-950 text-slate-200" value="">All statuses</option>
                 <option className="bg-slate-950 text-slate-200" value="up">Operational</option>
                 <option className="bg-slate-950 text-slate-200" value="degraded">Partly</option>

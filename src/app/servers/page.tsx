@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -9,8 +9,6 @@ import type { ProjectDto, ServerDto } from "@/lib/types";
 type FormState = { name: string; url: string; healthRoute: string; screenshotRoute: string; description: string; tags: string; enabled: boolean };
 const blank: FormState = { name: "", url: "", healthRoute: "", screenshotRoute: "", description: "", tags: "", enabled: true };
 
-const inputCls = "h-11 w-full rounded-lg border border-white/10 bg-black/30 px-3.5 text-sm text-white placeholder:text-slate-500 transition-colors focus:border-cyan-400/40 focus:bg-black/40";
-const btnCls = "h-10 rounded-lg px-4 text-sm font-medium transition-colors";
 
 function ServersPageContent() {
   const pathname = usePathname();
@@ -96,7 +94,7 @@ function ServersPageContent() {
   };
 
   return (
-    <main className="space-y-6">
+    <main className="page-shell">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-white">Servers</h1>
@@ -104,16 +102,16 @@ function ServersPageContent() {
         </div>
         <button
           onClick={() => openCreate()}
-          className="h-10 rounded-lg bg-cyan-400 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-300"
+          className="ui-btn ui-btn-primary"
         >
           New server
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.04]">
-        <table className="w-full min-w-[900px] text-left text-sm">
-          <thead className="bg-white/[0.03]">
-            <tr className="text-xs font-medium uppercase tracking-wide text-slate-500">
+      <div className="page-card overflow-x-auto">
+        <table className="ui-table min-w-[900px]">
+          <thead>
+            <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">URL</th>
               <th className="px-4 py-3">Status</th>
@@ -122,7 +120,7 @@ function ServersPageContent() {
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.06]">
+          <tbody>
             {loading
               ? Array.from({ length: 4 }).map((_, i) => (
                   <tr key={i}>
@@ -152,8 +150,8 @@ function ServersPageContent() {
                     <td className="px-4 py-3 text-slate-400">{s.tags.join(", ") || <span className="text-slate-600">—</span>}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button onClick={() => openEdit(s)} className={`${btnCls} border border-white/10 text-slate-200 hover:bg-white/10`}>Edit</button>
-                        <button onClick={() => { suppressActionRef.current = false; setDeleting(s); setQuery({ action: "delete", server: s._id }); }} className={`${btnCls} border border-rose-500/20 text-rose-300 hover:bg-rose-500/10`}>Delete</button>
+                        <button onClick={() => openEdit(s)} className="ui-btn ui-btn-secondary">Edit</button>
+                        <button onClick={() => { suppressActionRef.current = false; setDeleting(s); setQuery({ action: "delete", server: s._id }); }} className="ui-btn ui-btn-danger">Delete</button>
                       </div>
                     </td>
                   </tr>
@@ -168,7 +166,7 @@ function ServersPageContent() {
               <h2 className="text-base font-semibold text-white">No servers yet</h2>
               <p className="mt-1 text-sm text-slate-400">Create a server to start collecting uptime history and screenshots.</p>
             </div>
-            <button onClick={() => openCreate()} className="h-10 rounded-lg bg-cyan-400 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-300">
+            <button onClick={() => openCreate()} className="ui-btn ui-btn-primary">
               New server
             </button>
           </div>
@@ -181,30 +179,30 @@ function ServersPageContent() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="block text-xs font-medium text-slate-400">Name *</label>
-                <input required placeholder="My Server" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} />
+                <input required placeholder="My Server" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="ui-input" />
               </div>
               <div className="space-y-1.5">
                 <label className="block text-xs font-medium text-slate-400">URL *</label>
-                <input required placeholder="https://example.com" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className={inputCls} />
+                <input required placeholder="https://example.com" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className="ui-input" />
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="block text-xs font-medium text-slate-400">Health route</label>
-                <input placeholder="/health" value={form.healthRoute} onChange={(e) => setForm({ ...form, healthRoute: e.target.value })} className={inputCls} />
+                <input placeholder="/health" value={form.healthRoute} onChange={(e) => setForm({ ...form, healthRoute: e.target.value })} className="ui-input" />
               </div>
               <div className="space-y-1.5">
                 <label className="block text-xs font-medium text-slate-400">Screenshot route</label>
-                <input placeholder="(defaults to server URL)" value={form.screenshotRoute} onChange={(e) => setForm({ ...form, screenshotRoute: e.target.value })} className={inputCls} />
+                <input placeholder="(defaults to server URL)" value={form.screenshotRoute} onChange={(e) => setForm({ ...form, screenshotRoute: e.target.value })} className="ui-input" />
               </div>
             </div>
             <div className="space-y-1.5">
               <label className="block text-xs font-medium text-slate-400">Description</label>
-              <textarea placeholder="Optional description..." rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`${inputCls} h-auto resize-none`} />
+              <textarea placeholder="Optional description..." rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="ui-input h-auto resize-none" />
             </div>
             <div className="space-y-1.5">
               <label className="block text-xs font-medium text-slate-400">Tags <span className="text-slate-600">(comma-separated)</span></label>
-              <input placeholder="production, api, critical" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className={inputCls} />
+              <input placeholder="production, api, critical" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="ui-input" />
             </div>
             <button
               type="button"
@@ -223,8 +221,8 @@ function ServersPageContent() {
             </button>
             {error && <p className="rounded-lg bg-rose-500/10 px-4 py-2.5 text-sm text-rose-300 ring-1 ring-rose-500/20">{error}</p>}
             <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={closeModal} className={`${btnCls} border border-white/10 text-slate-200 hover:bg-white/10`}>Cancel</button>
-              <button className={`${btnCls} bg-cyan-400 font-semibold text-slate-950 hover:bg-cyan-300`}>Save</button>
+              <button type="button" onClick={closeModal} className="ui-btn ui-btn-secondary">Cancel</button>
+              <button className="ui-btn ui-btn-primary">Save</button>
             </div>
           </form>
         </Modal>

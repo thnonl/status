@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -8,8 +8,6 @@ import type { ProjectDto } from "@/lib/types";
 
 type FormState = { name: string; description: string; slug: string };
 const blank: FormState = { name: "", description: "", slug: "" };
-const inputCls = "h-11 w-full rounded-lg border border-white/10 bg-black/30 px-3.5 text-sm text-white placeholder:text-slate-500 transition-colors focus:border-cyan-400/40 focus:bg-black/40";
-const btnCls = "h-10 rounded-lg px-4 text-sm font-medium transition-colors";
 
 function ProjectsPageContent() {
   const pathname = usePathname();
@@ -42,23 +40,23 @@ function ProjectsPageContent() {
   async function remove() { if (!deleting) return; const res = await fetch(`/api/projects/${deleting._id}`, { method: "DELETE" }); const data = await res.json(); if (!res.ok) { setError(data.error ?? "Delete failed"); closeModal(); return; } closeModal(); await load(); }
 
   return (
-    <main className="space-y-6">
+    <main className="page-shell">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-white">Projects</h1>
           <p className="mt-1 text-sm text-slate-400">Organize monitored servers by project.</p>
         </div>
-        <button onClick={() => openCreate()} className="h-10 rounded-lg bg-cyan-400 px-4 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-300">
+        <button onClick={() => openCreate()} className="ui-btn ui-btn-primary">
           New project
         </button>
       </div>
 
       {error && <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>}
 
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.04]">
-        <table className="w-full min-w-[760px] text-left text-sm">
-          <thead className="bg-white/[0.03]">
-            <tr className="text-xs font-medium uppercase tracking-wide text-slate-500">
+      <div className="page-card overflow-x-auto">
+        <table className="ui-table min-w-[760px]">
+          <thead>
+            <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Slug</th>
               <th className="px-4 py-3">Description</th>
@@ -66,7 +64,7 @@ function ProjectsPageContent() {
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.06]">
+          <tbody>
             {projects.map((p) => (
               <tr key={p._id} className="text-slate-300 transition-colors hover:bg-white/[0.02]">
                 <td className="px-4 py-3 font-medium text-white">{p.name}</td>
@@ -75,8 +73,8 @@ function ProjectsPageContent() {
                 <td className="px-4 py-3">{p.isDefault ? <span className="inline-flex rounded-full bg-cyan-400/10 px-2.5 py-1 text-xs font-semibold text-cyan-300 ring-1 ring-cyan-400/20">Default</span> : <span className="text-slate-600">—</span>}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button onClick={() => openEdit(p)} className={`${btnCls} border border-white/10 text-slate-200 hover:bg-white/10`}>Edit</button>
-                    {!p.isDefault && <button onClick={() => { suppressActionRef.current = false; setDeleting(p); setQuery({ action: "delete", project: p._id }); }} className={`${btnCls} border border-rose-500/20 text-rose-300 hover:bg-rose-500/10`}>Delete</button>}
+                    <button onClick={() => openEdit(p)} className="ui-btn ui-btn-secondary">Edit</button>
+                    {!p.isDefault && <button onClick={() => { suppressActionRef.current = false; setDeleting(p); setQuery({ action: "delete", project: p._id }); }} className="ui-btn ui-btn-danger">Delete</button>}
                   </div>
                 </td>
               </tr>
@@ -99,20 +97,20 @@ function ProjectsPageContent() {
           <form onSubmit={save} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-medium text-slate-400">Project name *</label>
-              <input required placeholder="Project name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} />
+              <input required placeholder="Project name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="ui-input" />
             </div>
             <div className="space-y-1.5">
               <label className="block text-xs font-medium text-slate-400">Slug</label>
-              <input placeholder="slug-auto-generated" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className={`${inputCls} font-mono`} />
+              <input placeholder="slug-auto-generated" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="ui-input font-mono" />
             </div>
             <div className="space-y-1.5">
               <label className="block text-xs font-medium text-slate-400">Description</label>
-              <textarea placeholder="Optional description..." rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`${inputCls} h-auto resize-none py-3`} />
+              <textarea placeholder="Optional description..." rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="ui-input h-auto resize-none py-3" />
             </div>
             {error && <p className="rounded-lg bg-rose-500/10 px-4 py-2.5 text-sm text-rose-300 ring-1 ring-rose-500/20">{error}</p>}
             <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={closeModal} className={`${btnCls} border border-white/10 text-slate-200 hover:bg-white/10`}>Cancel</button>
-              <button className={`${btnCls} bg-cyan-400 font-semibold text-slate-950 hover:bg-cyan-300`}>Save</button>
+              <button type="button" onClick={closeModal} className="ui-btn ui-btn-secondary">Cancel</button>
+              <button className="ui-btn ui-btn-primary">Save</button>
             </div>
           </form>
         </Modal>
