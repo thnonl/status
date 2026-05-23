@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Camera, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Trash2 } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -41,6 +41,7 @@ function ServerDetailsPageContent() {
   const [lightbox, setLightbox] = useState<{ src: string; checkedAt: string } | null>(null);
   const [historyPage, setHistoryPage] = useState(1);
   const [screenshotPage, setScreenshotPage] = useState(1);
+  const suppressScreenshotRef = useRef(false);
   const historyPerPage = 20;
   const screenshotsPerPage = 12;
 
@@ -86,7 +87,11 @@ function ServerDetailsPageContent() {
   }, [lightbox, setQuery]);
 
   useEffect(() => {
-    if (!screenshotParam || lightbox?.src.endsWith(screenshotParam)) return;
+    if (!screenshotParam) {
+      suppressScreenshotRef.current = false;
+      return;
+    }
+    if (suppressScreenshotRef.current || lightbox?.src.endsWith(screenshotParam)) return;
     const item = history.find((check) => check.screenshotFileId === screenshotParam);
     if (item) setLightbox({ src: `/api/screenshots/${screenshotParam}`, checkedAt: item.checkedAt }); // eslint-disable-line react-hooks/set-state-in-effect
   }, [history, lightbox?.src, screenshotParam]);
@@ -97,7 +102,7 @@ function ServerDetailsPageContent() {
     setQuery({ screenshot: item.screenshotFileId });
   }
 
-  function closeScreenshot() { setLightbox(null); setQuery({ screenshot: null }); }
+  function closeScreenshot() { suppressScreenshotRef.current = true; setLightbox(null); setQuery({ screenshot: null }); }
 
   function setStatusQuery(value: string) { setQuery({ status: value || null }); }
 
@@ -331,15 +336,16 @@ function ServerDetailsPageContent() {
           role="dialog"
           aria-modal="true"
           aria-label="Screenshot lightbox"
+          onMouseDown={closeScreenshot}
         >
           <div
             className="relative w-full max-w-5xl overflow-hidden rounded-xl border border-white/10 bg-slate-950 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
           >
             <button
               type="button"
               onClick={closeScreenshot}
-              className="absolute right-3 top-3 z-10 rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20"
+              className="absolute right-3 top-3 z-10 rounded-lg border border-white/20 bg-slate-950/90 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-black/40 backdrop-blur hover:bg-slate-900"
             >
               Close
             </button>
