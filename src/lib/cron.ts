@@ -7,6 +7,12 @@ declare global {
 
 export function initCron() {
   if (globalThis.__cronInitialized) return;
+
+  // Skip auto cron in local development
+  if (process.env.NODE_ENV === "development") {
+    console.log("[cron] Skipped in development mode");
+    return;
+  }
   globalThis.__cronInitialized = true;
 
   const intervalMinutes = parseInt(process.env.CHECK_INTERVAL_MINUTES ?? "30", 10);
