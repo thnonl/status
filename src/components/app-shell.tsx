@@ -11,6 +11,7 @@ type ProjectItem = {
   id?: string;
   name?: string;
   title?: string;
+  slug?: string;
 };
 
 const STORAGE_KEYS = {
@@ -19,9 +20,9 @@ const STORAGE_KEYS = {
 };
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/servers", label: "Servers", icon: Server },
-  { href: "/projects", label: "Projects", icon: FolderKanban },
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { key: "servers", label: "Servers", icon: Server },
+  { key: "projects", label: "Projects", icon: FolderKanban },
 ] as const;
 
 function readStorage(key: string) {
@@ -59,12 +60,6 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
     return () => window.clearTimeout(timeout);
   }, [searchParams]);
 
-  const hrefWithProject = useCallback((href: string) => {
-    if (!currentProjectId) return href;
-    const params = new URLSearchParams();
-    params.set("project", currentProjectId);
-    return `${href}?${params.toString()}`;
-  }, [currentProjectId]);
 
   useEffect(() => {
     if (!ready) return;
@@ -123,6 +118,29 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
     return projects.find((project) => (project._id ?? project.id) === currentProjectId) ?? null;
   }, [currentProjectId, projects]);
 
+  const currentProjectSlug = currentProject?.slug ?? "";
+
+  const navHref = useCallback((key: (typeof navItems)[number]["key"]) => {
+    if (key === "projects") return "/projects";
+    if (!currentProjectSlug) return key === "servers" ? "/servers" : "/";
+    return key === "servers" ? `/project/${currentProjectSlug}/servers` : `/project/${currentProjectSlug}`;
+  }, [currentProjectSlug]);
+
+  const isNavActive = useCallback((key: (typeof navItems)[number]["key"]) => {
+    if (key === "projects") return pathname === "/projects" || pathname.startsWith("/projects/");
+    if (key === "servers") return pathname.includes("/servers") || pathname.includes("/server/");
+    return pathname === "/" || pathname === `/project/${currentProjectSlug}`;
+  }, [pathname, currentProjectSlug]);
+
+  useEffect(() => {
+    if (!currentProjectSlug) return;
+    if (pathname === "/") {
+      router.replace(`/project/${currentProjectSlug}`);
+    } else if (pathname === "/servers") {
+      router.replace(`/project/${currentProjectSlug}/servers`);
+    }
+  }, [currentProjectSlug, pathname, router]);
+
   function handleProjectChange(value: string) {
     setProjectMenuOpen(false);
     if (value === "__new__") {
@@ -131,11 +149,8 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
     }
     setCurrentProjectId(value);
     writeStorage(STORAGE_KEYS.currentProjectId, value);
-    const params = new URLSearchParams();
-    const status = searchParams.get("status");
-    if (status) params.set("status", status);
-    params.set("project", value);
-    router.replace(`${pathname}?${params.toString()}`);
+    const proj = projects.find((item) => (item._id ?? item.id) === value);
+    router.replace(proj?.slug ? `/project/${proj.slug}` : "/");
     router.refresh();
   }
 
@@ -193,12 +208,12 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
             </div>
 
             <nav className="flex-1 space-y-2 p-3">
-              {navItems.map(({ href, label, icon: Icon }) => {
-                const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+{navItems.map(({ key, label, icon: Icon }) => {
+                const active = isNavActive(key);
                 return (
                   <Link
-                    key={href}
-                    href={hrefWithProject(href)}
+                    key={key}
+                    href={navHref(key)}
                     onClick={() => setMobileOpen(false)}
                     className={[
                       "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition",

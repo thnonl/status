@@ -8,8 +8,15 @@ function serializeProject(project: { _id: { toString(): string }; [key: string]:
   return { ...project, _id: project._id.toString() };
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   await ensureDefaultProjectExists();
+  const url = new URL(req.url);
+  const slug = url.searchParams.get("slug");
+  if (slug) {
+    const project = await ProjectModel.findOne({ slug }).lean();
+    if (!project) return jsonError("Project not found", 404);
+    return Response.json(serializeProject(project));
+  }
   const projects = await ProjectModel.find().sort({ isDefault: -1, createdAt: 1 }).lean();
   return Response.json(projects.map(serializeProject));
 }
