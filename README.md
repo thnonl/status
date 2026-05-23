@@ -10,7 +10,8 @@ Biến env Dokploy cần cấu hình:
 - `APP_PORT`: port public bind ra host, mặc định `3000`.
 - `PORT`: port app Next.js chạy trong container, mặc định `3000`.
 - `CHECK_INTERVAL_MINUTES`: chu kỳ check server, mặc định `30`.
-- `RETENTION_DAYS`: số ngày giữ lịch sử/screenshot, mặc định `10`.
+- `RETENTION_DAYS`: số ngày giữ lịch sử/screenshot, mặc định `7`.
+- `SCREENSHOT_QUALITY`: chất lượng ảnh JPEG screenshot, mặc định `70`.
 - `NEXT_TELEMETRY_DISABLED`: tắt telemetry Next.js, mặc định `1`.
 
 Ví dụ `MONGODB_URI`:
@@ -18,3 +19,4 @@ Ví dụ `MONGODB_URI`:
 ```env
 MONGODB_URI=mongodb://username:password@host:27017/status-dashboard?authSource=admin
 ```
+

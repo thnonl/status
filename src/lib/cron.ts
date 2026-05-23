@@ -10,7 +10,7 @@ export function initCron() {
   globalThis.__cronInitialized = true;
 
   const intervalMinutes = parseInt(process.env.CHECK_INTERVAL_MINUTES ?? "30", 10);
-  const retentionDays = parseInt(process.env.RETENTION_DAYS ?? "10", 10);
+  const retentionDays = parseInt(process.env.RETENTION_DAYS ?? "7", 10);
   const cronExpr = `*/${intervalMinutes} * * * *`;
 
   cron.schedule(cronExpr, async () => {

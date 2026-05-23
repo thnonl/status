@@ -7,7 +7,8 @@ import mongoose from "mongoose";
 const DEGRADED_THRESHOLD_MS = 5000;
 const TIMEOUT_MS = 30000;
 const SCREENSHOT_SETTLE_MS = 5000;
-const SCREENSHOT_VIEWPORT = { width: 1920, height: 1080 };
+const SCREENSHOT_VIEWPORT = { width: 1280, height: 800 };
+const SCREENSHOT_QUALITY = parseInt(process.env.SCREENSHOT_QUALITY ?? "70", 10);
 const PARTLY_ERROR_RATIO = 0.2;
 
 function routeUrl(server: Pick<ServerDocument, "url">, route?: string) {
@@ -72,10 +73,11 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
       });
       await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => undefined);
       await page.waitForTimeout(SCREENSHOT_SETTLE_MS);
-      const screenshotBuf = await page.screenshot({ fullPage: true });
+      const screenshotBuf = await page.screenshot({ fullPage: true, type: "jpeg", quality: SCREENSHOT_QUALITY });
       fileId = await saveScreenshot(
-        `screenshot-${server._id}-${Date.now()}.png`,
+        `screenshot-${server._id}-${Date.now()}.jpg`,
         screenshotBuf,
+        "image/jpeg",
       );
     } catch {
       fileId = undefined;
@@ -108,6 +110,7 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
     await browser?.close();
   }
 }
+
 
 
 
