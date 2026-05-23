@@ -59,6 +59,23 @@ async function keepOnlyScreenshot(serverId: mongoose.Types.ObjectId, keepId?: mo
   for (const id of obsolete) await deleteScreenshot(new mongoose.Types.ObjectId(id));
 }
 
+async function keepOnlyLatestScreenshotRecord(serverId: mongoose.Types.ObjectId) {
+  const latest = await StatusCheckModel.findOne({
+    serverId,
+    screenshotFileId: { $exists: true, $ne: null },
+  })
+    .sort({ checkedAt: -1 })
+    .select("_id screenshotFileId")
+    .lean();
+  const keepId = latest?.screenshotFileId as mongoose.Types.ObjectId | undefined;
+  await keepOnlyScreenshot(serverId, keepId);
+  if (!latest) return;
+  await StatusCheckModel.updateMany(
+    { serverId, _id: { $ne: latest._id }, screenshotFileId: keepId },
+    { $unset: { screenshotFileId: "" } },
+  );
+}
+
 async function captureScreenshot(page: Page, server: ServerDocument & { _id: mongoose.Types.ObjectId }) {
   await page.goto(screenshotUrl(server), {
     waitUntil: "domcontentloaded",
@@ -121,17 +138,12 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
         ? responseTimeMs >= DEGRADED_THRESHOLD_MS ? "degraded" : "up"
         : networkErrors / Math.max(networkTotal, 1) <= PARTLY_ERROR_RATIO ? "degraded" : "up";
     let fileId: Awaited<ReturnType<typeof saveScreenshot>> | undefined;
-    if (status === "down") {
-      try {
-        fileId = await captureScreenshot(page, server);
-      } catch {
-        fileId = undefined;
-      }
-    } else {
-      fileId = await latestScreenshotFileId(server._id);
-      await keepOnlyScreenshot(server._id, fileId);
+    try {
+      fileId = await captureScreenshot(page, server);
+    } catch {
+      fileId = undefined;
     }
-    return await StatusCheckModel.create({
+    const newCheck = await StatusCheckModel.create({
       serverId: server._id,
       url: checkUrl,
       status,
@@ -140,6 +152,14 @@ export async function checkServer(server: ServerDocument & { _id: mongoose.Types
       error: networkErrors ? `${networkErrors}/${networkTotal} network requests failed` : undefined,
       screenshotFileId: fileId,
     });
+    if (fileId && status !== "down") {
+      await keepOnlyScreenshot(server._id, fileId);
+      await StatusCheckModel.updateMany(
+        { serverId: server._id, _id: { $ne: newCheck._id }, screenshotFileId: fileId },
+        { $unset: { screenshotFileId: "" } },
+      );
+    }
+    return newCheck;
   } catch (err) {
     const responseTimeMs = Date.now() - startTime;
     return await StatusCheckModel.create({
